@@ -1,0 +1,40 @@
+from sqlalchemy import Column, Integer, String, Float, Enum, ForeignKey
+from sqlalchemy.orm import relationship
+import enum
+from .Base import Base
+
+
+class Category(enum.Enum):
+    Iqos = 'Iqos'
+    Heets = 'Heets'
+    Terea = 'Terea'
+    Accessories = 'Accessories'
+    Miscellaneous = 'Miscellaneous'
+
+
+class Product(Base):
+    __tablename__ = "products"
+    id = Column(Integer, primary_key=True, nullable=False)
+    name = Column(String(50), nullable=False)
+    code = Column(String(20), unique=True, nullable=False)
+    price = Column(Float, nullable=True)
+    label = Column(Enum(Category), default=Category.Miscellaneous, nullable=False)
+    image_id = Column(Integer, ForeignKey('images.id'), nullable=True)
+    image = relationship('ProductImage')
+
+    def __init__(self, name, code, price=None, label=None):
+        self.name = name
+        self.code = code
+        self.price = price
+
+        if label is None:
+            self.label = Category.Miscellaneous
+
+        else:
+            try:
+                self.label = Category(label)
+            except ValueError:
+                self.label = Category.Miscellaneous
+
+    def __str__(self):
+        return self.name
