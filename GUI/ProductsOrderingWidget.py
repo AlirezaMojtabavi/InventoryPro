@@ -1,13 +1,16 @@
 import io
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, \
-    QLineEdit, QPushButton, QTableWidget, QTableWidgetItem
-from PyQt5.QtCore import QObject, pyqtSignal
+    QPushButton, QTableWidget, QTableWidgetItem, QComboBox,\
+    QMenu, QAction
+
+from PyQt5.QtCore import QObject, pyqtSignal, Qt, QPoint
 from Repositories.ProductRepository import ProductRepository
 from Repositories.OrderRepository import OrderRepository
 from GUI.RelatedProductsWindow import RelatedProductsWindow
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import subprocess
+from PyQt5.QtGui import QIcon
 
 
 class OrderUpdateSignal(QObject):
@@ -17,20 +20,32 @@ class OrderUpdateSignal(QObject):
 class ProductsOrderingWidget(QWidget):
     def __init__(self):
         super().__init__()
+        self.context_menu = None
+        self.layout = QVBoxLayout()
         self.product_repository = ProductRepository()
         self.order_repository = OrderRepository()
         self.related_products_window = None
         self.order_table = None
+        self.choose_button = None
         self.initUI()
         self.order_update_signal = OrderUpdateSignal()
         self.order_update_signal.order_updated.connect(self.update_order_rows)
 
     def initUI(self):
-        layout = QVBoxLayout()
-        # Product Ordering Section
         product_ordering_label = QLabel("Product Ordering Section")
-        layout.addWidget(product_ordering_label)
+        self.layout.addWidget(product_ordering_label)
+        self.prepare_order_table()
 
+        self.choose_button = QPushButton("Choose the category", self)
+        self.choose_button.setFixedSize(120, 22)
+        self.choose_button.clicked.connect(self.showContextMenu)
+        self.layout.addWidget(self.choose_button, alignment=Qt.AlignHCenter)
+
+
+        self.finalization()
+        self.setLayout(self.layout)
+
+    def prepare_order_table(self):
         self.order_table = QTableWidget()
         self.order_table.setColumnCount(4)
         self.order_table.setHorizontalHeaderLabels(["Code", "Product Name", "Quantity", "Price"])
@@ -46,28 +61,64 @@ class ProductsOrderingWidget(QWidget):
         self.order_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.order_table.setAlternatingRowColors(True)
         self.order_table.horizontalHeader().setStretchLastSection(True)
-        layout.addWidget(self.order_table)
+        self.layout.addWidget(self.order_table)
 
-        categories_list = self.product_repository.get_all_categories()
-        for categoryItem in categories_list:
-            category_name = categoryItem.name
-            button = QPushButton(category_name)
-            button.clicked.connect(lambda checked, name=category_name: self.show_products_of_label(name))
-            layout.addWidget(button)
-
-        # Finalize Order Button
+    def finalization(self):
         finalize_button = QPushButton("Finalize Order")
+        finalize_button.setFixedSize(120, 22)
+        self.layout.addWidget(finalize_button, alignment=Qt.AlignHCenter)
         # finalize_button.setStyleSheet(
         #     "QPushButton { background-color: #ff0000; color: #ffffff; }"
         #     "QPushButton:hover { background-color: #ff3333; }"
         # )
         finalize_button.clicked.connect(self.create_sales_invoice)
-        layout.addWidget(finalize_button)
+        self.layout.addWidget(finalize_button)
 
-        self.setLayout(layout)
+    def showContextMenu(self, pos):
+        categories_list = self.product_repository.get_all_categories()
+        self.context_menu = QMenu(self)
 
-    def show_products_of_label(self, name):
-        products = self.product_repository.get_products_by_label(name)
+        for categoryItem in categories_list:
+            action = QAction(categoryItem.name, self)
+            children = self.product_repository.get_children_label(categoryItem)
+            if children:
+                child_menu = QMenu(categoryItem.name, self)
+                for child in children:
+                    child_action = QAction(child.value, self)
+                    child_action.triggered.connect(lambda _, cat=categoryItem.name, ch=child.value: self.show_sub_label_products(cat, ch))
+                    child_menu.addAction(child_action)
+                action.setMenu(child_menu)
+                self.context_menu.addAction(action)
+            else:
+                action.triggered.connect(self.show_related_products)
+                self.context_menu.addAction(action)
+
+        self.context_menu.popup(self.mapToGlobal(QPoint(self.choose_button.x(), self.choose_button.y() + self.choose_button.height())))
+
+    def show_child_labels(self, category_name):
+        action = self.sender()
+        children_label = self.product_repository.get_children_label(category_name)
+        submenu = QMenu(category_name.value, self)
+        for child in children_label:
+            child_action = QAction(child.value, self)
+            child_action.triggered.connect(
+                lambda _, cat=category_name.value, ch=child.value: self.show_sub_label_products(cat, ch))
+            submenu.addAction(child_action)
+        self.context_menu = QMenu(category_name.value, self)
+        self.context_menu.addMenu(submenu)
+        self.context_menu.exec_(self.mapToGlobal(action.parentWidget().pos()))
+
+    def show_related_products(self):
+        action = self.sender()
+        category_name = action.text()
+        products = self.product_repository.get_products_by_label(category_name)
+        self.related_products_window = RelatedProductsWindow(products)
+        self.related_products_window.set_order_repository(self.order_repository)
+        self.related_products_window.order_updated.connect(self.order_update_signal.order_updated.emit)
+        self.related_products_window.show()
+
+    def show_sub_label_products(self, category_name, child_label):
+        products = self.product_repository.get_products_by_sub_label(category_name, child_label)
         self.related_products_window = RelatedProductsWindow(products)
         self.related_products_window.set_order_repository(self.order_repository)
         self.related_products_window.order_updated.connect(self.order_update_signal.order_updated.emit)
@@ -145,3 +196,10 @@ class ProductsOrderingWidget(QWidget):
 
         # Open the PDF file in a new window
         subprocess.Popen(["start", "sales_invoice.pdf"], shell=True)
+
+    # def show_products_of_label(self, name):
+    #     products = self.product_repository.get_products_by_label(name)
+    #     self.related_products_window = RelatedProductsWindow(products)
+    #     self.related_products_window.set_order_repository(self.order_repository)
+    #     self.related_products_window.order_updated.connect(self.order_update_signal.order_updated.emit)
+    #     self.related_products_window.show()

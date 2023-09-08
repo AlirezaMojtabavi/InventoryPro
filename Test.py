@@ -1,58 +1,44 @@
-from Models.Product import Product
-from Models.Customer import Customer
-from Models.Order import Order
-from Models.OrderRow import OrderRow
-from datetime import datetime
-import pandas as pd
-from database import engine
-from sqlalchemy.orm import sessionmaker
+import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QMenu, QLabel
 
-Session = sessionmaker(bind=engine)
-# -----------------------------------------------------------------------
-# ------------------- To initialize the table of Product--------------------
-# Read the Excel file
-# df = pd.read_excel('Product specifications.xlsx')
-# #Extract the product names from the first column
-# product_names = df.iloc[:, 0].tolist()
-# product_codes = df.iloc[:, 1].tolist()
-# Product.insert_items(product_names, product_codes)
-# ------------------------------------------------------------------------
-# customer = Customer.create_new_customer("first_customer", "09124042512")
-# rows = []
-# order = Order.create_new_order(customer_id=customer.id)
-# order_row1 = OrderRow(order_id=order.id, product_id=1, quantity=2)
-# rows.append(order_row1)
-# order_row2 = OrderRow(order_id=order.id, product_id=2, quantity=3)
-# rows.append(order_row2)
-# order.add_order_rows(rows)
-#
-# hola = 'salam'
-# ------------------------------------------------------------------------
+class DesktopWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
 
-customer = Customer(name='John Doe', phone='1234567890', address='123 Main St')
-#order = Order(customer=customer)
-order = Order.create_new_order(customer_id=customer.id)
+    def initUI(self):
+        self.setWindowTitle("Desktop Window")
+        self.setGeometry(100, 100, 400, 300)
 
-rows = []
-order_row1 = OrderRow(order_id=order.id, product_id=1, quantity=2)
-order_row2 = OrderRow(order_id=order.id, product_id=2, quantity=3)
-order_rows = order.rows
-rows.append(order_row1)
-rows.append(order_row2)
-order.add_order_rows(rows)
+        self.label = QLabel("Right-click here!", self)
+        self.label.setGeometry(50, 50, 300, 200)
 
-with Session() as session:
-    # Create a new order and pass the customer ID explicitly
-    session.add(order)
-    session.commit()
-    session.close()
+    def contextMenuEvent(self, event):
+        context_menu = QMenu(self)
 
-    hola = 1
-order_rows = order.rows
+        view_action = QAction("View", self)
+        view_menu = QMenu(self)
+        view_menu.addAction("Option 1")
+        view_menu.addAction("Option 2")
+        view_action.setMenu(view_menu)
 
-# Print the customer, order, and order rows
-print("Customer:", customer.name)
-print("Order ID:", order.id)
-print("Order Rows:")
-for order_row in order_rows:
-    print("Product ID:", order_row.product_id, "Quantity:", order_row.quantity)
+        refresh_action = QAction("Refresh", self)
+
+        context_menu.addAction(view_action)
+        context_menu.addAction(refresh_action)
+
+        action = context_menu.exec_(self.mapToGlobal(event.pos()))
+
+        if action == view_action:
+            # Handle view action
+            pass
+        elif action == refresh_action:
+            # Handle refresh action
+            pass
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = DesktopWindow()
+    window.show()
+    sys.exit(app.exec_())

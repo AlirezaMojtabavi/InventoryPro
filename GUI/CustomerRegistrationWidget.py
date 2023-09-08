@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, \
     QLineEdit, QPushButton, QVBoxLayout, QFrame, QSpacerItem, \
     QSizePolicy, QGroupBox, QFormLayout
-
+from PyQt5.QtCore import Qt
 from Repositories.CustomerRepository import CustomerRepository
 from Repositories.OrderRepository import OrderRepository
 
@@ -41,7 +41,7 @@ class CustomerRegistrationWidget(QWidget):
         self.customer_confirmation_button.setFixedSize(120, 22)
         self.customer_confirmation_button.clicked.connect(self.enable_product_ordering_section)
         self.customer_confirmation_button.setEnabled(False)
-        layout.addWidget(self.customer_confirmation_button)
+        layout.addWidget(self.customer_confirmation_button, alignment=Qt.AlignHCenter)
 
         self.setLayout(layout)
 
@@ -53,6 +53,7 @@ class CustomerRegistrationWidget(QWidget):
             name = self.customer_repository.get_customer_name()
             self.name_text.setText(name)
             self.name_text.setDisabled(True)
+            self.phone_text.setDisabled(True)
             self.customer_confirmation_button.setEnabled(True)
             self.customer_confirmation_button.setFocus()
         else:
@@ -63,6 +64,8 @@ class CustomerRegistrationWidget(QWidget):
         phone = self.phone_text.text()
         customer = self.customer_repository.create_customer(name, phone)
         self.customer_repository.set_customer(customer)
+        self.name_text.setDisabled(True)
+        self.phone_text.setDisabled(True)
         self.customer_confirmation_button.setEnabled(True)
         self.customer_confirmation_button.setFocus()
 

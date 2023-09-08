@@ -12,6 +12,27 @@ class Category(enum.Enum):
     Miscellaneous = 'Miscellaneous'
 
 
+class HeetsCategory(enum.Enum):
+    Armenia = 'Armenia'
+    European = 'European'
+    Arabic = 'Arabic'
+    Russian = 'Russian'
+
+
+class TereaCategory(enum.Enum):
+    Japanese = 'Japanese'
+    European = 'European'
+    Indonesian = 'Indonesian'
+    Italian = 'Italian'
+
+
+class IqosCategory(enum.Enum):
+    Iluma = 'Iluma'
+    Lil = 'Lil'
+    duo_3 = '3 duo'
+    Originals_duo = 'Originals duo'
+
+
 class Product(Base):
     __tablename__ = "products"
     id = Column(Integer, primary_key=True, nullable=False)

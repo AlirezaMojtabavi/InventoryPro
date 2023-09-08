@@ -1,4 +1,4 @@
-from Models.Product import Product, Category
+from Models.Product import Product, Category, TereaCategory, HeetsCategory, IqosCategory
 from sqlalchemy.exc import DataError
 
 
@@ -79,5 +79,21 @@ class ProductRepository:
     def get_all_categories(self):
         return list(Category)
 
+    def get_children_label(self, label_name):
+        if label_name == Category.Terea:
+            return list(TereaCategory)
+        elif label_name == Category.Heets:
+            return list(HeetsCategory)
+        elif label_name == Category.Iqos:
+            return list(IqosCategory)
+        else:
+            return False
+
     def get_product_by_id(self, p_id):
         return self.session.query(Product).filter_by(id=p_id).first()
+
+    def get_products_by_sub_label(self, parent_label, sub_label):
+        category_products = self.session.query(Product).filter_by(label=parent_label).all()
+        return [product for product in category_products if sub_label in product.name]
+
+

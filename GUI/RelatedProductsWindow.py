@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, \
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, \
     QPushButton, QSpinBox, QGridLayout, QScrollArea
 from PyQt5.QtCore import QObject, pyqtSignal
 
