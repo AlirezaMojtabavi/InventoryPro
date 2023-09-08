@@ -1,8 +1,8 @@
 import io
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, \
-    QPushButton, QTableWidget, QTableWidgetItem, QComboBox,\
+    QPushButton, QTableWidget, QTableWidgetItem, QComboBox, \
     QMenu, QAction
-
+from PyQt5.QtGui import QFont
 from PyQt5.QtCore import QObject, pyqtSignal, Qt, QPoint
 from Repositories.ProductRepository import ProductRepository
 from Repositories.OrderRepository import OrderRepository
@@ -10,7 +10,6 @@ from GUI.RelatedProductsWindow import RelatedProductsWindow
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import subprocess
-from PyQt5.QtGui import QIcon
 
 
 class OrderUpdateSignal(QObject):
@@ -41,7 +40,6 @@ class ProductsOrderingWidget(QWidget):
         self.choose_button.clicked.connect(self.showContextMenu)
         self.layout.addWidget(self.choose_button, alignment=Qt.AlignHCenter)
 
-
         self.finalization()
         self.setLayout(self.layout)
 
@@ -50,17 +48,33 @@ class ProductsOrderingWidget(QWidget):
         self.order_table.setColumnCount(4)
         self.order_table.setHorizontalHeaderLabels(["Code", "Product Name", "Quantity", "Price"])
 
+        font = QFont()
+        font.setBold(True)
+
+        header = self.order_table.horizontalHeader()
+        for i in range(self.order_table.columnCount()):
+            header.setFont(font)
+            header.setDefaultAlignment(Qt.AlignCenter)
+
         self.order_table.setStyleSheet(
             "QTableWidget { background-color: #ffffff; border: none; }"
             "QTableWidget::item { padding: 5px; }"
             "QTableWidget::item:selected { background-color: #c0c0c0; }"
+            "QTableWidget::item:alternate { background-color: #f0f0f0; }"
         )
+        self.order_table.setAlternatingRowColors(True)
+
         self.order_table.verticalHeader().setVisible(False)
+        self.order_table.resizeColumnsToContents()
+        self.order_table.setColumnWidth(0, 100)
+        self.order_table.setColumnWidth(1, 300)
+        self.order_table.setColumnWidth(3, 80)
+
         self.order_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.order_table.setSelectionMode(QTableWidget.SingleSelection)
         self.order_table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.order_table.setAlternatingRowColors(True)
-        self.order_table.horizontalHeader().setStretchLastSection(True)
+        # self.order_table.horizontalHeader().setStretchLastSection(True)
+        self.order_table.setSortingEnabled(True)
         self.layout.addWidget(self.order_table)
 
     def finalization(self):
@@ -85,7 +99,8 @@ class ProductsOrderingWidget(QWidget):
                 child_menu = QMenu(categoryItem.name, self)
                 for child in children:
                     child_action = QAction(child.value, self)
-                    child_action.triggered.connect(lambda _, cat=categoryItem.name, ch=child.value: self.show_sub_label_products(cat, ch))
+                    child_action.triggered.connect(
+                        lambda _, cat=categoryItem.name, ch=child.value: self.show_sub_label_products(cat, ch))
                     child_menu.addAction(child_action)
                 action.setMenu(child_menu)
                 self.context_menu.addAction(action)
@@ -93,7 +108,8 @@ class ProductsOrderingWidget(QWidget):
                 action.triggered.connect(self.show_related_products)
                 self.context_menu.addAction(action)
 
-        self.context_menu.popup(self.mapToGlobal(QPoint(self.choose_button.x(), self.choose_button.y() + self.choose_button.height())))
+        self.context_menu.popup(
+            self.mapToGlobal(QPoint(self.choose_button.x(), self.choose_button.y() + self.choose_button.height())))
 
     def show_child_labels(self, category_name):
         action = self.sender()
@@ -141,6 +157,11 @@ class ProductsOrderingWidget(QWidget):
                 product_name = QTableWidgetItem(product_name)
                 quantity_item = QTableWidgetItem(str(row.quantity))
                 price_item = QTableWidgetItem(str(row.rowPrice))
+
+                product_code.setTextAlignment(Qt.AlignCenter)
+                product_name.setTextAlignment(Qt.AlignCenter)
+                quantity_item.setTextAlignment(Qt.AlignCenter)
+                price_item.setTextAlignment(Qt.AlignCenter)
 
                 self.order_table.setItem(i, 0, product_code)
                 self.order_table.setItem(i, 1, product_name)

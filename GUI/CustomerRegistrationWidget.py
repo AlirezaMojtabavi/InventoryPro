@@ -10,6 +10,9 @@ class CustomerRegistrationWidget(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.customer_confirmation_button = None
+        self.phone_text = None
+        self.name_text = None
         self.customer_repository = CustomerRepository()
         self.order_repository = OrderRepository()
 
@@ -31,6 +34,7 @@ class CustomerRegistrationWidget(QWidget):
         self.name_text = QLineEdit()
         self.name_text.setFixedSize(200, 22)
         self.name_text.returnPressed.connect(self.new_customer_registration)
+
         customer_form_layout.addRow(name_label, self.name_text)
 
         customer_group_box.setLayout(customer_form_layout)
@@ -47,27 +51,35 @@ class CustomerRegistrationWidget(QWidget):
 
     def check_phone_number(self):
         phone_number = self.phone_text.text()
-        if self.customer_repository.check_phone_number(phone_number):
-            customer = self.customer_repository.get_customer_by_phone(phone_number)
+        if self.validate_phone_number(phone_number):
+            if self.customer_repository.check_phone_number(phone_number):
+                customer = self.customer_repository.get_customer_by_phone(phone_number)
+                self.customer_repository.set_customer(customer)
+                name = self.customer_repository.get_customer_name()
+                self.name_text.setText(name)
+                self.name_text.setDisabled(True)
+                self.phone_text.setDisabled(True)
+                self.customer_confirmation_button.setEnabled(True)
+                self.customer_confirmation_button.setFocus()
+            else:
+                self.name_text.setFocus()
+        else:
+            self.phone_text.clear()
+            self.phone_text.setFocus()
+
+    def new_customer_registration(self):
+        name = self.name_text.text()
+        phone = self.phone_text.text()
+        if self.validate_phone_number(phone):
+            customer = self.customer_repository.create_customer(name, phone)
             self.customer_repository.set_customer(customer)
-            name = self.customer_repository.get_customer_name()
-            self.name_text.setText(name)
             self.name_text.setDisabled(True)
             self.phone_text.setDisabled(True)
             self.customer_confirmation_button.setEnabled(True)
             self.customer_confirmation_button.setFocus()
         else:
-            self.name_text.setFocus()
-
-    def new_customer_registration(self):
-        name = self.name_text.text()
-        phone = self.phone_text.text()
-        customer = self.customer_repository.create_customer(name, phone)
-        self.customer_repository.set_customer(customer)
-        self.name_text.setDisabled(True)
-        self.phone_text.setDisabled(True)
-        self.customer_confirmation_button.setEnabled(True)
-        self.customer_confirmation_button.setFocus()
+            self.phone_text.clear()
+            self.phone_text.setFocus()
 
     def enable_product_ordering_section(self):
         order = self.order_repository.create_new_order(self.customer_repository.get_customer_id())
@@ -75,3 +87,10 @@ class CustomerRegistrationWidget(QWidget):
 
     def get_order_repository(self):
         return self.order_repository
+
+    def validate_phone_number(self, phone_number):
+        # Check if the phone number is 11 digits long, starts with 0, and contains only digits
+        if len(phone_number) == 11 and phone_number.startswith('0') and phone_number.isdigit():
+            return True
+        else:
+            return False
