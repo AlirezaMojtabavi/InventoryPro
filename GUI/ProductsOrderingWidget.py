@@ -217,10 +217,3 @@ class ProductsOrderingWidget(QWidget):
 
         # Open the PDF file in a new window
         subprocess.Popen(["start", "sales_invoice.pdf"], shell=True)
-
-    # def show_products_of_label(self, name):
-    #     products = self.product_repository.get_products_by_label(name)
-    #     self.related_products_window = RelatedProductsWindow(products)
-    #     self.related_products_window.set_order_repository(self.order_repository)
-    #     self.related_products_window.order_updated.connect(self.order_update_signal.order_updated.emit)
-    #     self.related_products_window.show()

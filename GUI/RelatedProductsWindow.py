@@ -21,33 +21,33 @@ class RelatedProductsWindow(QWidget):
         content_widget = QWidget()
         self.content_layout = QGridLayout(content_widget)
         for i, productItem in enumerate(self.products):
-            label = QLabel(productItem.name)
+            product_code = QLabel(productItem.code)
+            product_code.setFixedSize(40, 25)
+            product_name = QLabel(productItem.name)
+            product_name.setFixedSize(215, 25)
             spinBox = QSpinBox()
-            self.content_layout.addWidget(label, i, 0)
-            self.content_layout.addWidget(spinBox, i, 1)
+            spinBox.setFixedSize(45, 25)
+            self.content_layout.addWidget(product_code, i, 0)
+            self.content_layout.addWidget(product_name, i, 1)
+            self.content_layout.addWidget(spinBox, i, 2)
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(content_widget)
 
         confirm_button = QPushButton("Confirm")
-        # button.clicked.connect(self.show_product_of_label)
         confirm_button.clicked.connect(self.confirm_button_clicked)
 
-        main_layout = QGridLayout(self)
+        # main_layout = QGridLayout(self)
+        main_layout = QVBoxLayout(self)
         main_layout.addWidget(scroll_area)
         main_layout.addWidget(confirm_button)
         self.setWindowTitle('Related Products Window')
-        self.setGeometry(200, 50, 400, 600)
-        # self.ProductsSection = ProductsSection()
-        # self.product_ordering_widget.hide()
-        # self.layout.addWidget(self.product_ordering_widget)
-        #
-        # self.setLayout(self.layout)
+        self.setGeometry(200, 50, 450, 600)
 
     def confirm_button_clicked(self):
         for i in range(len(self.products)):
-            spinBox = self.content_layout.itemAtPosition(i, 1).widget()
+            spinBox = self.content_layout.itemAtPosition(i, 2).widget()
             quantity = spinBox.value()
             if quantity > 0:
                 product = self.products[i]
