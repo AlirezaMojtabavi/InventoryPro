@@ -1,7 +1,7 @@
 import io
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, \
     QPushButton, QTableWidget, QTableWidgetItem, QComboBox, \
-    QMenu, QAction
+    QMenu, QAction, QAbstractButton
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import QObject, pyqtSignal, Qt, QPoint
 from Repositories.ProductRepository import ProductRepository
@@ -45,8 +45,8 @@ class ProductsOrderingWidget(QWidget):
 
     def prepare_order_table(self):
         self.order_table = QTableWidget()
-        self.order_table.setColumnCount(4)
-        self.order_table.setHorizontalHeaderLabels(["Code", "Product Name", "Quantity", "Price"])
+        self.order_table.setColumnCount(5)
+        self.order_table.setHorizontalHeaderLabels(["Code", "Product Name", "Quantity", "Price", "Actions"])
 
         font = QFont()
         font.setBold(True)
@@ -168,6 +168,21 @@ class ProductsOrderingWidget(QWidget):
                 self.order_table.setItem(i, 2, quantity_item)
                 self.order_table.setItem(i, 3, price_item)
 
+                remove_button = QPushButton("Remove", self.order_table)
+                remove_button.setObjectName(f"removeButton_{i}")
+                # remove_button.clicked.connect(lambda _, row_id=row.id: self.remove_row(row.id))
+                remove_button.setProperty("row_id", row.id)
+                remove_button.clicked.connect(self.remove_row)
+                self.order_table.setCellWidget(i, 4, remove_button)
+                self.order_table.setColumnWidth(4, remove_button.sizeHint().width())
+
+    def remove_row(self, row_id):
+        remove_button = self.sender()
+        row_id = remove_button.property("row_id")
+        if row_id is not None:
+            self.order_table.removeRow(self.order_table.indexAt(remove_button.pos()).row())
+            self.order_repository.remove_row(row_id)
+
     def create_sales_invoice(self):
         the_order = self.order_repository.get_order()
         buffer = io.BytesIO()
@@ -212,8 +227,9 @@ class ProductsOrderingWidget(QWidget):
         pdf.save()
 
         # Save the PDF to a file
-        with open("sales_invoice.pdf", "wb") as file:
+        file_name = "sales_invoice" + str(the_order.id) + ".pdf"
+        with open(file_name, "wb") as file:
             file.write(buffer.getvalue())
 
         # Open the PDF file in a new window
-        subprocess.Popen(["start", "sales_invoice.pdf"], shell=True)
+        subprocess.Popen(["start", file_name], shell=True)

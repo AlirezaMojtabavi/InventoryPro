@@ -32,19 +32,15 @@ class OrderRepository:
         order_row = OrderRow(self.order.id, product_id, quantity, row_price)
         self.order.totalPrice += row_price
         self.order.rows.append(order_row)
+        self.session.commit()
 
-    # @staticmethod
-    # def initiate(customer):
-    #     from database import engine
-    #     from sqlalchemy.orm import sessionmaker
-    #     Session = sessionmaker(bind=engine)
-    #     with Session() as session:
-    #         order = Order()
-    #         order.customer_id = customer.id
-    #         session.add(order)
-    #         session.commit()
-    #         session.close()
-    #     return order
+    def remove_row(self, row_id):
+        order_row = self.session.query(OrderRow).filter_by(id=row_id).first()
+        if order_row:
+            self.order.totalPrice -= order_row.rowPrice
+            self.session.delete(order_row)
+            self.session.commit()
+
 
     # def remove_product(self, product, amount=None):
     #

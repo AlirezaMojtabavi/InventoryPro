@@ -24,7 +24,7 @@ class OrderRegistrationWindow(QWidget):
         self.setLayout(layout)
 
         self.setWindowTitle('Customer Registration Window')
-        self.setGeometry(100, 100, 600, 500)
+        self.setGeometry(100, 100, 700, 500)
 
         # self.ProductsSection = ProductsSection()
         # self.product_ordering_widget.hide()
