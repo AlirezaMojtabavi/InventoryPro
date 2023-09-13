@@ -16,4 +16,3 @@ class Order(Base):
     def __init__(self, customer_id):
         self.customer_id = customer_id
         self.order_time = datetime.now()
-

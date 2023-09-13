@@ -40,8 +40,9 @@ if __name__ == '__main__':
         df = pd.read_excel('Product specifications.xlsx')
         product_names = df.iloc[:, 0].tolist()
         product_codes = df.iloc[:, 1].tolist()
+        labels = df.iloc[:, 2].tolist()
         product_repository = ProductRepository()
-        product_repository.insert_items(product_names, product_codes)
+        product_repository.insert_items(product_names, product_codes, labels)
 
     app = QApplication(sys.argv)
     main_window = MainWindow()

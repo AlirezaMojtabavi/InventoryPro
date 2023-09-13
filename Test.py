@@ -1,44 +1,67 @@
-import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QMenu, QLabel
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer,PageBreak
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.pdfbase import pdfmetrics
+import reportlab
+from reportlab.pdfbase.ttfonts import TTFont
+###################################################
 
-class DesktopWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.initUI()
+import arabic_reshaper
 
-    def initUI(self):
-        self.setWindowTitle("Desktop Window")
-        self.setGeometry(100, 100, 400, 300)
-
-        self.label = QLabel("Right-click here!", self)
-        self.label.setGeometry(50, 50, 300, 200)
-
-    def contextMenuEvent(self, event):
-        context_menu = QMenu(self)
-
-        view_action = QAction("View", self)
-        view_menu = QMenu(self)
-        view_menu.addAction("Option 1")
-        view_menu.addAction("Option 2")
-        view_action.setMenu(view_menu)
-
-        refresh_action = QAction("Refresh", self)
-
-        context_menu.addAction(view_action)
-        context_menu.addAction(refresh_action)
-
-        action = context_menu.exec_(self.mapToGlobal(event.pos()))
-
-        if action == view_action:
-            # Handle view action
-            pass
-        elif action == refresh_action:
-            # Handle refresh action
-            pass
+from bidi.algorithm import get_display
 
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = DesktopWindow()
-    window.show()
-    sys.exit(app.exec_())
+#init the style sheet
+styles = getSampleStyleSheet()
+
+    #### add custome font ####
+pdfmetrics.registerFont(TTFont('Arabic', '29ltbukraregular.ttf'))
+
+    ####### STYLE #######
+#heading style
+styleH_1 = styles['Heading1']
+
+## paragraph style
+styleN = styles['Normal']
+square_text_style = ParagraphStyle(
+    'border',
+    parent = styleN ,
+    borderColor= '#333333',
+    borderWidth =  1,
+    borderPadding  =  2,
+)
+
+arabic_text_style = ParagraphStyle(
+    'border',
+    parent = styleN ,
+    borderColor= '#333333',
+    borderWidth =  1,
+    borderPadding  =  2,
+    fontName="Arabic"
+)
+#reshape the text
+arabic_text =""" عندما يريد العالم أن ‪يتكلّم ‬ ، فهو يتحدّث بلغة
+ يونيكود. تسجّل الآن لحضور المؤتمر الدولي العاشر ليونيكود (Unicode Conference)، الذي سيعقد في 10-12 آذار 1997 بمدينة مَايِنْتْس، ألمانيا. و سيجمع المؤتمر بين خبراء
+  من كافة قطاعات الصناعة على الشبكة العالمية انترنيت ويونيكود، حيث ستتم، على الصعيدين الدولي والمحلي على حد سواء مناقشة سبل استخدام يونكود في النظم القائمة وفيما يخص التطبيقات الحاسوبية، الخطوط، تصميم النصوص والحوسبة متعددة اللغات."""
+rehaped_text = arabic_reshaper.reshape(arabic_text)
+bidi_text = get_display(rehaped_text)
+
+##########################"  add element to the story ####################
+story = []
+
+##arabic text showing squares
+story.append(Paragraph("Arabic text showing black squares ",styleH_1))
+story.append(Spacer(1,8))
+story.append(Paragraph(bidi_text,square_text_style))
+story.append(Spacer(1,14))
+
+
+#perfect arabic text
+story.append(Paragraph("Perfect arabic text ",styleH_1))
+story.append(Spacer(1,8))
+story.append(Paragraph(bidi_text,arabic_text_style))
+
+# save the pdf file
+doc = SimpleDocTemplate('mydoc.pdf',pagesize = letter)
+doc.build(story)

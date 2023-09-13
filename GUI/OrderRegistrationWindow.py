@@ -12,10 +12,8 @@ class OrderRegistrationWindow(QWidget):
 
     def initUI(self):
         layout = QVBoxLayout()
-        customer_section_label = QLabel("Customer Registration")
         self.customer_Registration_widget = CustomerRegistrationWidget()
         self.customer_Registration_widget.customer_confirmation_button.clicked.connect(self.show_product_ordering_widget)
-        layout.addWidget(customer_section_label)
         layout.addWidget(self.customer_Registration_widget)
 
         self.product_ordering_widget = ProductsOrderingWidget()
@@ -25,12 +23,6 @@ class OrderRegistrationWindow(QWidget):
 
         self.setWindowTitle('Customer Registration Window')
         self.setGeometry(100, 100, 700, 500)
-
-        # self.ProductsSection = ProductsSection()
-        # self.product_ordering_widget.hide()
-        # self.layout.addWidget(self.product_ordering_widget)
-        #
-        # self.setLayout(self.layout)
 
     def show_product_ordering_widget(self):
         order_repository = self.customer_Registration_widget.get_order_repository()

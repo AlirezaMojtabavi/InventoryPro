@@ -34,19 +34,16 @@ class CustomerRegistrationWidget(QWidget):
         self.name_text = QLineEdit()
         self.name_text.setFixedSize(200, 22)
         self.name_text.returnPressed.connect(self.new_customer_registration)
-
         customer_form_layout.addRow(name_label, self.name_text)
-
-        customer_group_box.setLayout(customer_form_layout)
-
-        layout.addWidget(customer_group_box)
 
         self.customer_confirmation_button = QPushButton("Confirm the Customer")
         self.customer_confirmation_button.setFixedSize(120, 22)
         self.customer_confirmation_button.clicked.connect(self.enable_product_ordering_section)
         self.customer_confirmation_button.setEnabled(False)
-        layout.addWidget(self.customer_confirmation_button, alignment=Qt.AlignHCenter)
+        customer_form_layout.addRow(self.customer_confirmation_button)
 
+        customer_group_box.setLayout(customer_form_layout)
+        layout.addWidget(customer_group_box)
         self.setLayout(layout)
 
     def check_phone_number(self):

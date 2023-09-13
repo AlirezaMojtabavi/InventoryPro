@@ -50,7 +50,6 @@ class Product(Base):
 
         if label is None:
             self.label = Category.Miscellaneous
-
         else:
             try:
                 self.label = Category(label)
