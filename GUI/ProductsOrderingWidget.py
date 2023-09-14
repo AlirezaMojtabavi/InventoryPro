@@ -20,13 +20,9 @@ import arabic_reshaper
 from reportlab.lib.utils import ImageReader
 from reportlab.lib.units import inch, mm
 from reportlab.pdfbase import pdfmetrics
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import Image, Paragraph, Table, TableStyle, Spacer
+from reportlab.platypus import Image, Paragraph, Table, TableStyle
 from reportlab.lib import colors
-from PIL import Image
-from reportlab.graphics import renderPM
-from reportlab.graphics.shapes import Drawing
-from reportlab.graphics import renderPDF
+
 
 
 class OrderUpdateSignal(QObject):
@@ -203,139 +199,6 @@ class ProductsOrderingWidget(QWidget):
             self.order_table.removeRow(self.order_table.indexAt(remove_button.pos()).row())
             self.order_repository.remove_row(row_id)
 
-    def create_sales_invoice(self):
-        the_order = self.order_repository.get_order()
-        buffer = io.BytesIO()
-        # Create a new PDF document
-        pdf = canvas.Canvas(buffer, pagesize=letter)
-        reportlab.rl_config.canvas_basefontname = "Arial"
-
-        pdfmetrics.registerFont(TTFont('Farsi', 'F:\InventoryManagement\B Nazanin.ttf'))
-
-        # Set up the invoice layout
-        pdf.setFont("Helvetica-Bold", 16)
-        pdf.drawString(50, 750, "Sales Invoice")
-        pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(50, 700, "Order Number:")
-        pdf.drawString(200, 700, str(the_order.id))
-
-        # Add order details
-        pdf.setFont("Helvetica", 12)
-        pdf.drawString(50, 650, "Customer Name:")
-        pdf.saveState()
-        pdf.translate(200, 650)  # Move the origin to the starting point of the text
-        pdf.rotate(90)  # Rotate the canvas 90 degrees
-        pdf.drawString(0, 0, the_order.customer.name, direction="rtl")
-        pdf.restoreState()
-
-        pdf.drawString(50, 625, "Date:")
-        pdf.drawString(200, 625, str(the_order.order_time))
-
-        # Add order items
-        pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(50, 575, "Code")
-        pdf.drawString(100, 575, "Product")
-        pdf.drawString(320, 575, "Quantity")
-        pdf.drawString(400, 575, "Price")
-        pdf.setFont("Helvetica", 12)
-
-        y = 550  # Initial y-position for the first order item
-        for row in the_order.rows:
-            pdf.drawString(50, y, row.product.code)
-            pdf.drawString(100, y, row.product.name)
-            pdf.drawString(320, y, str(row.quantity))
-            pdf.drawString(400, y, str(row.rowPrice))
-            y -= 25  # Move to the next line
-
-        # Add total amount
-        pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(50, y - 25, "Total:")
-        pdf.drawString(150, y - 25, str(the_order.totalPrice))
-        # Move the buffer's file pointer to the beginning
-        pdf.save()
-
-        # Save the PDF to a file
-        file_name = "sales_invoice" + str(the_order.id) + ".pdf"
-        with open(file_name, "wb") as file:
-            file.write(buffer.getvalue())
-
-        # Open the PDF file in a new window
-        subprocess.Popen(["start", file_name], shell=True)
-
-    def create_sales_invoice_farsi(self):
-        the_order = self.order_repository.get_order()
-        buffer = io.BytesIO()
-        pdf = canvas.Canvas(buffer, pagesize=A5)
-
-        farsi_font_path = "B Nazanin.ttf"
-        pdfmetrics.registerFont(TTFont("FarsiFont", farsi_font_path))
-
-        styles = getSampleStyleSheet()
-        arabic_style = ParagraphStyle("FarsiStyle", parent=styles["Normal"], fontName="FarsiFont")
-
-        elements = []
-        image_path = "logo.jpg"
-        image = Image(image_path, width=200, height=30)
-        elements.append(image)
-
-        elements.append(Spacer(1, 20 * mm))
-
-        order_number = self.convert_to_farsi("شماره سفارش:")
-        pdf.drawString(50, 675, order_number)
-        pdf.drawString(150, 675, str(the_order.id))
-
-        customer_name = self.convert_to_farsi("نام مشتری:")
-        pdf.drawString(50, 650, customer_name)
-
-        farsi_name = the_order.customer.name
-        farsi_name_display = self.convert_to_farsi(farsi_name)
-        pdf.drawString(150, 650, farsi_name_display)
-
-        date_string = self.convert_to_farsi("تاریخ:")
-        pdf.drawString(50, 625, date_string)
-        jdate = jdatetime.fromgregorian(datetime=the_order.order_time)
-        pdf.drawString(150, 625, str(jdate))
-
-        # Add the table with order rows
-        elements.append(Spacer(1, 10 * mm))
-        table_data = [["Code", "Product", "Quantity", "Price"]]
-        for row in the_order.rows:
-            table_data.append([
-                row.product.code,
-                row.product.name,
-                str(row.quantity),
-                str(row.rowPrice)
-            ])
-        table_style = TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.gray),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, 0), 12),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
-            ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
-            ("GRID", (0, 0), (-1, -1), 1, colors.black),
-        ])
-        table = Table(table_data)
-        table.setStyle(table_style)
-        elements.append(table)
-
-        # Add the total price
-        elements.append(Spacer(1, 10 * mm))
-        total_label = self.convert_to_farsi("جمع کل:")
-        pdf.drawString(50, 50, total_label)
-        pdf.drawString(150, 50, str(the_order.totalPrice))
-        # Build the PDF document
-        pdf.build(elements)
-
-        # Save the PDF to a file
-        file_name = "sales_invoice" + str(the_order.id) + ".pdf"
-        with open(file_name, "wb") as file:
-            file.write(buffer.getvalue())
-
-        # Open the PDF file
-        subprocess.Popen(["start", file_name], shell=True)
-
     def create_standard_invoice(self):
         the_order = self.order_repository.get_order()
         buffer = io.BytesIO()
@@ -349,16 +212,15 @@ class ProductsOrderingWidget(QWidget):
         pdf.drawImage(karen_image_path, 100, 560, 200, 25)
 
         # __________________Part1______________________
-        pdf.setFont("FarsiFont", 12)
+        pdf.setFont("FarsiFont", 14)
 
-        pdf.setFont("FarsiFont", 12)
         customer_name = self.convert_to_farsi("نام مشتری:")
         pdf.drawRightString(380, 520, customer_name)
         farsi_name = the_order.customer.name
         farsi_name_display = self.convert_to_farsi(farsi_name)
         pdf.drawRightString(325, 520, farsi_name_display)
 
-        mobile_string = self.convert_to_farsi("شماره موبایل:")
+        mobile_string = self.convert_to_farsi("موبایل:")
         pdf.drawRightString(380, 495, mobile_string)
         customer_mobile = the_order.customer.phone
         customer_mobile_display = self.convert_to_farsi(customer_mobile)
@@ -366,9 +228,8 @@ class ProductsOrderingWidget(QWidget):
 
         order_number = self.convert_to_farsi("شماره سفارش:")
         pdf.drawRightString(170, 520, order_number)
-        pdf.drawString(85, 520, str(the_order.id))
+        pdf.drawString(65, 520, str(the_order.id))
 
-        pdf.setFont("FarsiFont", 12)
         date_string = self.convert_to_farsi("تاریخ:")
         pdf.drawRightString(170, 495, date_string)
         jdate = jdatetime.fromgregorian(datetime=the_order.order_time)
@@ -380,30 +241,47 @@ class ProductsOrderingWidget(QWidget):
         table.wrapOn(pdf, 0, 0)
         w = (420 - table._width) / 2
         table_height = table._height
-        available_height = 440  # Adjust this value as needed
+        available_height = 440
         starting_y = available_height - table_height
-
         table.drawOn(pdf, w, starting_y)
 
-        # ___________________Part3_______________
-
         pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(260, available_height - table_height - 15, "Total:")
-        pdf.drawString(295, available_height - table_height - 15, str(the_order.totalPrice))
 
-        about_us_image = "F://InventoryManagement//Resources//about us.png"
-        pdf.drawImage(about_us_image, 10, 10, 130, 40)
+        total_y = available_height - table_height - 20
+        padding = 5
+
+        total_text_width = pdf.stringWidth("Total:", "Helvetica", 12)
+        price_text_width = pdf.stringWidth(str(the_order.totalPrice), "Helvetica", 12)
+
+        # Calculate the width of the border based on the content width
+        border_width = total_text_width + price_text_width + (3 * padding)
+
+        # Draw the border
+        pdf.rect(260 - padding, total_y - padding, border_width, 10 + (2 * padding))
+
+        # Add the "Total:" text and the price
+        pdf.drawString(260, total_y, "Total:")
+        pdf.drawString(260 + total_text_width + 5, total_y, str(the_order.totalPrice))
+
+        # ___________________Part3_______________
+        pdf.setFont("FarsiFont", 11)
+        payment_text_string = "لطفا پس از واریز، فیش واریزی را ارسال کنید."
+        payment_text = self.convert_to_farsi(payment_text_string)
+        pdf.drawRightString(380, 75, payment_text)
+
+        footer_image = "F://InventoryManagement//Resources//footer.png"
+        pdf.drawImage(footer_image, 10, 10, 130, 80)
 
         pdf.save()
 
         # Save the PDF to a file
         file_name = "sales_invoice" + str(the_order.id) + ".pdf"
-        # output_dir = "F://InventoryManagement//Output//"
-        with open(file_name, "wb") as file:
+        output_dir = "F://InventoryManagement//Output//"
+        with open(output_dir + file_name, "wb") as file:
             file.write(buffer.getvalue())
 
         # Open the PDF file in a new window
-        subprocess.Popen(["start", file_name], shell=True)
+        subprocess.Popen(["start", output_dir + file_name], shell=True)
 
     def convert_to_farsi(self, text):
         reshaped_name = arabic_reshaper.reshape(text)
@@ -434,4 +312,3 @@ class ProductsOrderingWidget(QWidget):
         table = Table(table_data)
         table.setStyle(table_style)
         return table, y
-
