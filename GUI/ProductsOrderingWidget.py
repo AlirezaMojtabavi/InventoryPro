@@ -4,6 +4,8 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, \
     QMenu, QAction
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import QObject, pyqtSignal, Qt, QPoint
+from psycopg2.extras import DictRow
+
 from Repositories.ProductRepository import ProductRepository
 from Repositories.OrderRepository import OrderRepository
 from GUI.RelatedProductsWindow import RelatedProductsWindow
@@ -16,14 +18,15 @@ from reportlab.pdfbase.ttfonts import TTFont
 from bidi.algorithm import get_display
 import arabic_reshaper
 from reportlab.lib.utils import ImageReader
-from reportlab.lib.units import inch
+from reportlab.lib.units import inch, mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
+from reportlab.platypus import Image, Paragraph, Table, TableStyle, Spacer
 from reportlab.lib import colors
 from PIL import Image
-from reportlab.platypus import Image
-from reportlab.lib.units import mm
+from reportlab.graphics import renderPM
+from reportlab.graphics.shapes import Drawing
+from reportlab.graphics import renderPDF
 
 
 class OrderUpdateSignal(QObject):
@@ -338,33 +341,78 @@ class ProductsOrderingWidget(QWidget):
         buffer = io.BytesIO()
         pdf = canvas.Canvas(buffer, pagesize=A5)
 
-        farsi_font_path = "B Nazanin.ttf"
+        farsi_font_path = "F:\InventoryManagement\Resources\B Nazanin.ttf"
         pdfmetrics.registerFont(TTFont("FarsiFont", farsi_font_path))
         reportlab.rl_config.canvas_basefontname = "Arial"
+
+        karen_image_path = "F:\InventoryManagement\Resources\logo.png"
+        pdf.drawImage(karen_image_path, 100, 560, 200, 25)
 
         # __________________Part1______________________
         pdf.setFont("FarsiFont", 12)
 
-        order_number = self.convert_to_farsi("شماره سفارش:")
-        pdf.drawRightString(380, 550, order_number)
-        pdf.drawString(300, 550, str(the_order.id))
-
         pdf.setFont("FarsiFont", 12)
         customer_name = self.convert_to_farsi("نام مشتری:")
-        pdf.drawRightString(380, 525, customer_name)
+        pdf.drawRightString(380, 520, customer_name)
         farsi_name = the_order.customer.name
         farsi_name_display = self.convert_to_farsi(farsi_name)
-        pdf.drawRightString(325, 525, farsi_name_display)
+        pdf.drawRightString(325, 520, farsi_name_display)
+
+        mobile_string = self.convert_to_farsi("شماره موبایل:")
+        pdf.drawRightString(380, 495, mobile_string)
+        customer_mobile = the_order.customer.phone
+        customer_mobile_display = self.convert_to_farsi(customer_mobile)
+        pdf.drawRightString(325, 495, customer_mobile_display)
+
+        order_number = self.convert_to_farsi("شماره سفارش:")
+        pdf.drawRightString(170, 520, order_number)
+        pdf.drawString(85, 520, str(the_order.id))
 
         pdf.setFont("FarsiFont", 12)
         date_string = self.convert_to_farsi("تاریخ:")
-        pdf.drawRightString(380, 500, date_string)
+        pdf.drawRightString(170, 495, date_string)
         jdate = jdatetime.fromgregorian(datetime=the_order.order_time)
-        pdf.drawRightString(325, 500, str(jdate.strftime("%Y-%m-%d")))
+        pdf.drawRightString(125, 495, str(jdate.strftime("%Y-%m-%d")))
 
         # _________________Part2______________________
-        y = 450
+
+        table, y = self.prepare_pdf_order_table(the_order)
+        table.wrapOn(pdf, 0, 0)
+        w = (420 - table._width) / 2
+        table_height = table._height
+        available_height = 440  # Adjust this value as needed
+        starting_y = available_height - table_height
+
+        table.drawOn(pdf, w, starting_y)
+
+        # ___________________Part3_______________
+
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(260, available_height - table_height - 15, "Total:")
+        pdf.drawString(295, available_height - table_height - 15, str(the_order.totalPrice))
+
+        about_us_image = "F://InventoryManagement//Resources//about us.png"
+        pdf.drawImage(about_us_image, 10, 10, 130, 40)
+
+        pdf.save()
+
+        # Save the PDF to a file
+        file_name = "sales_invoice" + str(the_order.id) + ".pdf"
+        # output_dir = "F://InventoryManagement//Output//"
+        with open(file_name, "wb") as file:
+            file.write(buffer.getvalue())
+
+        # Open the PDF file in a new window
+        subprocess.Popen(["start", file_name], shell=True)
+
+    def convert_to_farsi(self, text):
+        reshaped_name = arabic_reshaper.reshape(text)
+        farsi_name_display = get_display(reshaped_name)
+        return farsi_name_display
+
+    def prepare_pdf_order_table(self, the_order):
         table_data = [["Code", "Product", "Quantity", "Price"]]
+        y = 430
         for row in the_order.rows:
             table_data.append([
                 row.product.code,
@@ -372,7 +420,7 @@ class ProductsOrderingWidget(QWidget):
                 str(row.quantity),
                 str(row.rowPrice)
             ])
-            y -= 25
+            y -= 20
         table_style = TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), colors.gray),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
@@ -385,25 +433,5 @@ class ProductsOrderingWidget(QWidget):
         ])
         table = Table(table_data)
         table.setStyle(table_style)
-        table.wrapOn(pdf, 100, 450)
-        table.drawOn(pdf, 40, 350)
+        return table, y
 
-        # ___________________Part3_______________
-        pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(50, y - 50, "Total:")
-        pdf.drawString(150, y - 50, str(the_order.totalPrice))
-        # Move the buffer's file pointer to the beginning
-        pdf.save()
-
-        # Save the PDF to a file
-        file_name = "sales_invoice" + str(the_order.id) + ".pdf"
-        with open(file_name, "wb") as file:
-            file.write(buffer.getvalue())
-
-        # Open the PDF file in a new window
-        subprocess.Popen(["start", file_name], shell=True)
-
-    def convert_to_farsi(self, text):
-        reshaped_name = arabic_reshaper.reshape(text)
-        farsi_name_display = get_display(reshaped_name)
-        return farsi_name_display
