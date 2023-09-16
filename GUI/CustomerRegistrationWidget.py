@@ -81,6 +81,7 @@ class CustomerRegistrationWidget(QWidget):
     def enable_product_ordering_section(self):
         order = self.order_repository.create_new_order(self.customer_repository.get_customer_id())
         self.order_repository.set_order(order)
+        self.customer_confirmation_button.setEnabled(False)
 
     def get_order_repository(self):
         return self.order_repository
