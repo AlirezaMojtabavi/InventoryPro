@@ -26,9 +26,10 @@ class OrderRegistrationWindow(QWidget):
         self.product_ordering_widget.show()
 
     def retrieve_order(self):
-        self.product_ordering_widget = ProductsOrderingWidget()
         order_repo = self.customer_Registration_widget.get_order_repository()
-        self.product_ordering_widget.set_order_repository(order_repo)
+        self.product_ordering_widget = ProductsOrderingWidget(order_repo)
+        #order_repo = self.customer_Registration_widget.get_order_repository()
+        #self.product_ordering_widget.set_order_repository(order_repo)
         self.layout.addWidget(self.product_ordering_widget)
         self.setGeometry(100, 100, 700, 600)
         self.product_ordering_widget.show()

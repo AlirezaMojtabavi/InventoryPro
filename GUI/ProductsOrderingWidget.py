@@ -9,7 +9,7 @@ from psycopg2.extras import DictRow
 from Repositories.ProductRepository import ProductRepository
 from Repositories.OrderRepository import OrderRepository
 from GUI.RelatedProductsWindow import RelatedProductsWindow
-from reportlab.lib.pagesizes import letter, A4, A5
+from reportlab.lib.pagesizes import A5
 from reportlab.pdfgen import canvas
 import subprocess
 import reportlab.rl_config
@@ -17,32 +17,38 @@ from jdatetime import datetime as jdatetime
 from reportlab.pdfbase.ttfonts import TTFont
 from bidi.algorithm import get_display
 import arabic_reshaper
-from reportlab.lib.utils import ImageReader
-from reportlab.lib.units import inch, mm
+
 from reportlab.pdfbase import pdfmetrics
 from reportlab.platypus import Image, Paragraph, Table, TableStyle
 from reportlab.lib import colors
-
 
 
 class OrderUpdateSignal(QObject):
     order_updated = pyqtSignal()
 
 
+class EnableFinalizeButtonSignal(QObject):
+    enable_finalization = pyqtSignal()
+
+
 class ProductsOrderingWidget(QWidget):
-    def __init__(self):
+    def __init__(self, order_repo):
         super().__init__()
         self.product_ordering_group_box = None
         self.context_menu = None
         self.layout = QVBoxLayout()
         self.product_repository = ProductRepository()
-        self.order_repository = OrderRepository()
+        self.order_repo = order_repo
         self.related_products_window = None
         self.order_table = None
         self.choose_button = None
+        self.finalize_button = None
         self.initUI()
         self.order_update_signal = OrderUpdateSignal()
+        self.enable_finalization_signal = EnableFinalizeButtonSignal()
+
         self.order_update_signal.order_updated.connect(self.update_order_rows)
+        self.enable_finalization_signal.enable_finalization.connect(self.enable_finalization)
 
     def initUI(self):
         self.product_ordering_group_box = QGroupBox("Product Ordering")
@@ -70,7 +76,6 @@ class ProductsOrderingWidget(QWidget):
         for i in range(self.order_table.columnCount()):
             header.setFont(font)
             header.setDefaultAlignment(Qt.AlignCenter)
-            # header.setSectionResizeMode(i, QHeaderView.ResizeToContents)
 
         self.order_table.setStyleSheet(
             "QTableWidget { background-color: #ffffff; border: none; }"
@@ -89,20 +94,23 @@ class ProductsOrderingWidget(QWidget):
         self.order_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.order_table.setSelectionMode(QTableWidget.SingleSelection)
         self.order_table.setSelectionBehavior(QTableWidget.SelectRows)
-        # self.order_table.horizontalHeader().setStretchLastSection(True)
         self.order_table.setSortingEnabled(True)
         self.layout.addWidget(self.order_table)
 
+    def enable_finalization(self):
+        if self.order_repo.order_is_empty():
+            self.finalize_button.setDisabled(True)
+        else:
+            self.finalize_button.setDisabled(False)
+
     def finalization(self):
-        finalize_button = QPushButton("Finalize Order")
-        finalize_button.setFixedSize(120, 22)
-        self.layout.addWidget(finalize_button, alignment=Qt.AlignHCenter)
-        # finalize_button.setStyleSheet(
-        #     "QPushButton { background-color: #ff0000; color: #ffffff; }"
-        #     "QPushButton:hover { background-color: #ff3333; }"
-        # )
-        finalize_button.clicked.connect(self.create_standard_invoice)
-        self.layout.addWidget(finalize_button)
+        self.finalize_button = QPushButton("Finalize Order")
+        self.finalize_button.setFixedSize(120, 22)
+        self.finalize_button.setDisabled(True)
+        self.layout.addWidget(self.finalize_button, alignment=Qt.AlignHCenter)
+
+        self.finalize_button.clicked.connect(self.create_standard_invoice)
+        self.layout.addWidget(self.finalize_button)
 
     def showContextMenu(self, pos):
         categories_list = self.product_repository.get_all_categories()
@@ -144,23 +152,27 @@ class ProductsOrderingWidget(QWidget):
         action = self.sender()
         category_name = action.text()
         products = self.product_repository.get_products_by_label(category_name)
-        self.related_products_window = RelatedProductsWindow(products)
-        self.related_products_window.set_order_repository(self.order_repository)
+        self.related_products_window = RelatedProductsWindow(products, self.order_repo)
+        #self.related_products_window.set_order_repository(self.order_repository)
         self.related_products_window.order_updated.connect(self.order_update_signal.order_updated.emit)
+        self.related_products_window.enable_finalization.connect(
+            self.enable_finalization_signal.enable_finalization.emit)
         self.related_products_window.show()
 
     def show_sub_label_products(self, category_name, child_label):
         products = self.product_repository.get_products_by_sub_label(category_name, child_label)
-        self.related_products_window = RelatedProductsWindow(products)
-        self.related_products_window.set_order_repository(self.order_repository)
+        self.related_products_window = RelatedProductsWindow(products, self.order_repo)
+        #self.related_products_window.set_order_repository(self.order_repository)
         self.related_products_window.order_updated.connect(self.order_update_signal.order_updated.emit)
+        self.related_products_window.enable_finalization.connect(
+            self.enable_finalization_signal.enable_finalization.emit)
         self.related_products_window.show()
 
-    def set_order_repository(self, order_repository):
-        self.order_repository = order_repository
+    # def set_order_repository(self, order_repository):
+    #     self.order_repository = order_repository
 
     def update_order_rows(self):
-        order = self.order_repository.get_order()
+        order = self.order_repo.get_order()
         buffer = io.BytesIO()
         if order:
             rows = order.rows
@@ -197,10 +209,10 @@ class ProductsOrderingWidget(QWidget):
         row_id = remove_button.property("row_id")
         if row_id is not None:
             self.order_table.removeRow(self.order_table.indexAt(remove_button.pos()).row())
-            self.order_repository.remove_row(row_id)
+            self.order_repo.remove_row(row_id)
 
     def create_standard_invoice(self):
-        the_order = self.order_repository.get_order()
+        the_order = self.order_repo.get_order()
         buffer = io.BytesIO()
         pdf = canvas.Canvas(buffer, pagesize=A5)
 

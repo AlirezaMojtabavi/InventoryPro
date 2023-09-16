@@ -7,13 +7,18 @@ class OrderUpdateSignal(QObject):
     order_updated = pyqtSignal()
 
 
+class EnableFinalizeButtonSignal(QObject):
+    enable_finalization = pyqtSignal()
+
+
 class RelatedProductsWindow(QWidget):
     order_updated = pyqtSignal()
+    enable_finalization = pyqtSignal()
 
-    def __init__(self, products):
+    def __init__(self, products, order_repo):
         super().__init__()
         self.products = products
-        self.order_repository = None
+        self.order_repo = order_repo
         self.content_layout = None
         self.initUI()
 
@@ -53,10 +58,11 @@ class RelatedProductsWindow(QWidget):
                 product = self.products[i]
                 self.add_order_row(product_id=product.id, quantity=quantity)
         self.order_updated.emit()
+        self.enable_finalization.emit()
         self.close()
 
-    def set_order_repository(self, order_repo):
-        self.order_repository = order_repo
+    # def set_order_repository(self, order_repo):
+    #     self.order_repo = order_repo
 
     def add_order_row(self, product_id, quantity):
-        self.order_repository.add_row(product_id, quantity)
+        self.order_repo.add_row(product_id, quantity)
