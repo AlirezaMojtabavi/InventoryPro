@@ -43,6 +43,7 @@ class ProductsOrderingWidget(QWidget):
         self.order_table = None
         self.choose_button = None
         self.finalize_button = None
+        self.pdf = None
         self.initUI()
         self.order_update_signal = OrderUpdateSignal()
         self.enable_finalization_signal = EnableFinalizeButtonSignal()
@@ -153,7 +154,7 @@ class ProductsOrderingWidget(QWidget):
         category_name = action.text()
         products = self.product_repository.get_products_by_label(category_name)
         self.related_products_window = RelatedProductsWindow(products, self.order_repo)
-        #self.related_products_window.set_order_repository(self.order_repository)
+        # self.related_products_window.set_order_repository(self.order_repository)
         self.related_products_window.order_updated.connect(self.order_update_signal.order_updated.emit)
         self.related_products_window.enable_finalization.connect(
             self.enable_finalization_signal.enable_finalization.emit)
@@ -162,7 +163,7 @@ class ProductsOrderingWidget(QWidget):
     def show_sub_label_products(self, category_name, child_label):
         products = self.product_repository.get_products_by_sub_label(category_name, child_label)
         self.related_products_window = RelatedProductsWindow(products, self.order_repo)
-        #self.related_products_window.set_order_repository(self.order_repository)
+        # self.related_products_window.set_order_repository(self.order_repository)
         self.related_products_window.order_updated.connect(self.order_update_signal.order_updated.emit)
         self.related_products_window.enable_finalization.connect(
             self.enable_finalization_signal.enable_finalization.emit)
@@ -214,77 +215,79 @@ class ProductsOrderingWidget(QWidget):
     def create_standard_invoice(self):
         the_order = self.order_repo.get_order()
         buffer = io.BytesIO()
-        pdf = canvas.Canvas(buffer, pagesize=A5)
+        self.pdf = canvas.Canvas(buffer, pagesize=A5)
 
-        farsi_font_path = "F:\InventoryManagement\Resources\B Nazanin.ttf"
+        farsi_font_path = "F://InventoryManagement//Resources//B Nazanin.ttf"
         pdfmetrics.registerFont(TTFont("FarsiFont", farsi_font_path))
-        reportlab.rl_config.canvas_basefontname = "Arial"
+        Arial_font_path = "F://InventoryManagement//Resources//arial.ttf"
+        pdfmetrics.registerFont(TTFont("ArialFont", Arial_font_path))
+        reportlab.rl_config.canvas_basefontname = "ArialFont"
 
         karen_image_path = "F:\InventoryManagement\Resources\logo.png"
-        pdf.drawImage(karen_image_path, 100, 560, 200, 25)
+        self.pdf.drawImage(karen_image_path, 100, 560, 200, 25)
 
         # __________________Part1______________________
-        pdf.setFont("FarsiFont", 14)
+        self.pdf.setFont("FarsiFont", 14)
 
         customer_name = self.convert_to_farsi("نام مشتری:")
-        pdf.drawRightString(380, 520, customer_name)
+        self.pdf.drawRightString(380, 520, customer_name)
         farsi_name = the_order.customer.name
         farsi_name_display = self.convert_to_farsi(farsi_name)
-        pdf.drawRightString(325, 520, farsi_name_display)
+        self.pdf.drawRightString(325, 520, farsi_name_display)
 
         mobile_string = self.convert_to_farsi("موبایل:")
-        pdf.drawRightString(380, 495, mobile_string)
+        self.pdf.drawRightString(380, 495, mobile_string)
         customer_mobile = the_order.customer.phone
         customer_mobile_display = self.convert_to_farsi(customer_mobile)
-        pdf.drawRightString(325, 495, customer_mobile_display)
+        self.pdf.drawRightString(325, 495, customer_mobile_display)
 
         order_number = self.convert_to_farsi("شماره سفارش:")
-        pdf.drawRightString(170, 520, order_number)
-        pdf.drawString(65, 520, str(the_order.id))
+        self.pdf.drawRightString(170, 520, order_number)
+        self.pdf.drawString(65, 520, str(the_order.id))
 
         date_string = self.convert_to_farsi("تاریخ:")
-        pdf.drawRightString(170, 495, date_string)
+        self.pdf.drawRightString(170, 495, date_string)
         jdate = jdatetime.fromgregorian(datetime=the_order.order_time)
-        pdf.drawRightString(125, 495, str(jdate.strftime("%Y-%m-%d")))
+        self.pdf.drawRightString(125, 495, str(jdate.strftime("%Y-%m-%d")))
 
         # _________________Part2______________________
 
         table, y = self.prepare_pdf_order_table(the_order)
-        table.wrapOn(pdf, 0, 0)
+        table.wrapOn(self.pdf, 0, 0)
         w = (420 - table._width) / 2
         table_height = table._height
         available_height = 440
         starting_y = available_height - table_height
-        table.drawOn(pdf, w, starting_y)
+        table.drawOn(self.pdf, w, starting_y)
 
-        pdf.setFont("Helvetica-Bold", 12)
+        self.pdf.setFont("Helvetica-Bold", 12)
 
         total_y = available_height - table_height - 20
         padding = 5
 
-        total_text_width = pdf.stringWidth("Total:", "Helvetica", 12)
-        price_text_width = pdf.stringWidth(str(the_order.totalPrice), "Helvetica", 12)
+        total_text_width = self.pdf.stringWidth("Total:", "Helvetica", 12)
+        price_text_width = self.pdf.stringWidth(str(the_order.totalPrice), "Helvetica", 12)
 
         # Calculate the width of the border based on the content width
         border_width = total_text_width + price_text_width + (3 * padding)
 
         # Draw the border
-        pdf.rect(260 - padding, total_y - padding, border_width, 10 + (2 * padding))
+        self.pdf.rect(260 - padding, total_y - padding, border_width, 10 + (2 * padding))
 
         # Add the "Total:" text and the price
-        pdf.drawString(260, total_y, "Total:")
-        pdf.drawString(260 + total_text_width + 5, total_y, str(the_order.totalPrice))
+        self.pdf.drawString(260, total_y, "Total:")
+        self.pdf.drawString(260 + total_text_width + 5, total_y, str(the_order.totalPrice))
 
         # ___________________Part3_______________
-        pdf.setFont("FarsiFont", 11)
-        payment_text_string = "لطفا پس از واریز، فیش واریزی را ارسال کنید."
+        self.pdf.setFont("FarsiFont", 11)
+        payment_text_string = "لطفا پس از پرداخت، فیش واریزی را ارسال نمایید."
         payment_text = self.convert_to_farsi(payment_text_string)
-        pdf.drawRightString(380, 75, payment_text)
+        self.pdf.drawRightString(380, 90, payment_text)
 
         footer_image = "F://InventoryManagement//Resources//footer.png"
-        pdf.drawImage(footer_image, 10, 10, 130, 80)
+        self.pdf.drawImage(footer_image, 10, 10, 130, 80)
 
-        pdf.save()
+        self.pdf.save()
 
         # Save the PDF to a file
         file_name = "sales_invoice" + str(the_order.id) + ".pdf"
