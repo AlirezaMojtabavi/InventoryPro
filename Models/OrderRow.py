@@ -14,9 +14,11 @@ class OrderRow(Base):
     quantity = Column(Integer)
     rowPrice = Column(Float, default=0)
 
-    def __init__(self, order_id, product_id, quantity, row_price):
+    def __init__(self, order_id, product_id, row_price, quantity=None):
         self.order_id = order_id
         self.product_id = product_id
-        self.quantity = quantity
         self.rowPrice = row_price
-
+        if quantity is not None:
+            self.quantity = quantity
+        else:
+            self.quantity = 1

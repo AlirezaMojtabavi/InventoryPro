@@ -178,14 +178,18 @@ class ProductsOrderingWidget(QWidget):
         if order:
             rows = order.rows
             self.order_table.setRowCount(len(rows))
-
             for i, row in enumerate(rows):
                 product_code = self.product_repository.get_product_by_id(row.product_id).code
                 product_name = self.product_repository.get_product_by_id(row.product_id).name
                 product_code = QTableWidgetItem(product_code)
                 product_name = QTableWidgetItem(product_name)
-                quantity_item = QTableWidgetItem(str(row.quantity))
-                price_item = QTableWidgetItem(str(row.rowPrice))
+                if product_code == "9999":
+                    quantity_item = QTableWidgetItem(str(0))
+                    delivery_fee = row.quantity * 10000
+                    price_item = QTableWidgetItem("{:,.0f}".format(delivery_fee))
+                else:
+                    price_item = QTableWidgetItem("{:,.0f}".format(row.rowPrice))
+                    quantity_item = QTableWidgetItem(str(row.quantity))
 
                 product_code.setTextAlignment(Qt.AlignCenter)
                 product_name.setTextAlignment(Qt.AlignCenter)
@@ -223,7 +227,7 @@ class ProductsOrderingWidget(QWidget):
         pdfmetrics.registerFont(TTFont("ArialFont", Arial_font_path))
         reportlab.rl_config.canvas_basefontname = "ArialFont"
 
-        karen_image_path = "F:\InventoryManagement\Resources\logo.png"
+        karen_image_path = "F://InventoryManagement//Resources//logo.png"
         self.pdf.drawImage(karen_image_path, 100, 560, 200, 25)
 
         # __________________Part1______________________
@@ -252,11 +256,11 @@ class ProductsOrderingWidget(QWidget):
 
         # _________________Part2______________________
 
-        table, y = self.prepare_pdf_order_table(the_order)
+        table = self.prepare_pdf_order_table(the_order)
         table.wrapOn(self.pdf, 0, 0)
         w = (420 - table._width) / 2
         table_height = table._height
-        available_height = 440
+        available_height = 460
         starting_y = available_height - table_height
         table.drawOn(self.pdf, w, starting_y)
 
@@ -276,13 +280,21 @@ class ProductsOrderingWidget(QWidget):
 
         # Add the "Total:" text and the price
         self.pdf.drawString(260, total_y, "Total:")
-        self.pdf.drawString(260 + total_text_width + 5, total_y, str(the_order.totalPrice))
+        self.pdf.drawString(260 + total_text_width + 5, total_y, "{:,.0f}".format(the_order.totalPrice))
 
         # ___________________Part3_______________
         self.pdf.setFont("FarsiFont", 11)
+        price_unit_string = "تمامی مبالغ به ریال میباشد."
+        unit_text = self.convert_to_farsi(price_unit_string)
+        self.pdf.drawRightString(380, total_y - 35, unit_text)
         payment_text_string = "لطفا پس از پرداخت، فیش واریزی را ارسال نمایید."
         payment_text = self.convert_to_farsi(payment_text_string)
-        self.pdf.drawRightString(380, 90, payment_text)
+        self.pdf.drawRightString(380, total_y - 55, payment_text)
+
+        self.pdf.setFont("FarsiFont", 8)
+        karen_text_string = "مجموعه کارن آیکوس، تخصصی ترین مجموعه در حوضه محصولات آیکوس، هیتس و تریا"
+        karen_text = self.convert_to_farsi(karen_text_string)
+        self.pdf.drawRightString(380, 15, karen_text)
 
         footer_image = "F://InventoryManagement//Resources//footer.png"
         self.pdf.drawImage(footer_image, 10, 10, 130, 80)
@@ -305,15 +317,13 @@ class ProductsOrderingWidget(QWidget):
 
     def prepare_pdf_order_table(self, the_order):
         table_data = [["Code", "Product", "Quantity", "Price"]]
-        y = 430
         for row in the_order.rows:
             table_data.append([
                 row.product.code,
                 row.product.name,
                 str(row.quantity),
-                str(row.rowPrice)
+                "{:,.0f}".format(row.rowPrice)
             ])
-            y -= 20
         table_style = TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), colors.gray),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
@@ -326,4 +336,4 @@ class ProductsOrderingWidget(QWidget):
         ])
         table = Table(table_data)
         table.setStyle(table_style)
-        return table, y
+        return table

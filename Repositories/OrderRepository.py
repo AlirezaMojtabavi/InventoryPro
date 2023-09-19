@@ -29,8 +29,16 @@ class OrderRepository:
     def add_row(self, product_id, quantity):
         product_repo = ProductRepository()
         row_price = product_repo.get_product_by_id(product_id).price * quantity
-        order_row = OrderRow(self.order.id, product_id, quantity, row_price)
+        order_row = OrderRow(order_id=self.order.id, product_id=product_id, row_price=row_price, quantity=quantity)
         self.order.totalPrice += row_price
+        self.order.rows.append(order_row)
+        self.session.commit()
+
+    def add_delivery_row(self, price):
+        product_repo = ProductRepository()
+        product_id = product_repo.get_product_by_code("9999").id
+        order_row = OrderRow(self.order.id, product_id, row_price=price)
+        self.order.totalPrice += price
         self.order.rows.append(order_row)
         self.session.commit()
 

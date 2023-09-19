@@ -12,7 +12,7 @@ class ProductRepository:
     def get_products_by_label(self, label):
         return self.session.query(Product).filter_by(label=label).all()
 
-    def insert_items(self, names, codes, labels, price=10.0):
+    def insert_items(self, names, codes, labels, prices):
         uniqueNames = list(set(names))
         uniqueCodes = list(set(codes))
         products = []
@@ -20,11 +20,12 @@ class ProductRepository:
             name = names[i].strip()
             code = str(codes[i]).strip()
             label = labels[i]
+            price = prices[i]
             try:
-                product = Product(name, code, price, label)
+                product = Product(name, code, label, price)
 
             except DataError:
-                product = Product(name, code, price)
+                product = Product(name, code, price=0.0)
 
             products.append(product)
         self.session.add_all(products)

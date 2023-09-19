@@ -37,12 +37,13 @@ if __name__ == '__main__':
     if False:
         # ------------------- To initialize the table of Product--------------------
         # Read the Excel file
-        df = pd.read_excel('Product specifications.xlsx')
+        df = pd.read_excel('F://InventoryManagement//Resources//Product specifications.xlsx')
         product_names = df.iloc[:, 0].tolist()
         product_codes = df.iloc[:, 1].tolist()
         labels = df.iloc[:, 2].tolist()
+        prices = df.iloc[:, 3].tolist()
         product_repository = ProductRepository()
-        product_repository.insert_items(product_names, product_codes, labels)
+        product_repository.insert_items(product_names, product_codes, labels, prices)
 
     app = QApplication(sys.argv)
     main_window = MainWindow()

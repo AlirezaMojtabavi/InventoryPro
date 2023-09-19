@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, \
-    QPushButton, QSpinBox, QGridLayout, QScrollArea
+    QPushButton, QSpinBox, QGridLayout, QScrollArea, QLineEdit
 from PyQt5.QtCore import QObject, pyqtSignal
 
 
@@ -31,7 +31,11 @@ class RelatedProductsWindow(QWidget):
             product_name = QLabel(productItem.name)
             product_name.setFixedSize(215, 25)
             spinBox = QSpinBox()
-            spinBox.setFixedSize(45, 25)
+            spinBox.setFixedSize(50, 25)
+            spinBox.setMinimum(0)
+            spinBox.setMaximum(999)
+            if productItem.price == 0:
+                spinBox.setDisabled(True)
             self.content_layout.addWidget(product_code, i, 0)
             self.content_layout.addWidget(product_name, i, 1)
             self.content_layout.addWidget(spinBox, i, 2)
@@ -50,13 +54,25 @@ class RelatedProductsWindow(QWidget):
         self.setWindowTitle('Related Products Window')
         self.setGeometry(200, 50, 450, 600)
 
+    # def delivery(self):
+    #     product_code = QLabel(self.products.code)
+    #     product_code.setFixedSize(40, 25)
+    #     product_name = QLabel(self.products.name)
+    #     product_name.setFixedSize(215, 25)
+    #     price_text = QLineEdit()
+    #     price_text.setFixedSize(50, 25)
+
     def confirm_button_clicked(self):
         for i in range(len(self.products)):
             spinBox = self.content_layout.itemAtPosition(i, 2).widget()
             quantity = spinBox.value()
             if quantity > 0:
                 product = self.products[i]
-                self.add_order_row(product_id=product.id, quantity=quantity)
+                if product.code == "9999":
+                    delivery_price = quantity * 10000
+                    self.add_delivery_row(delivery_price)
+                else:
+                    self.add_order_row(product_id=product.id, quantity=quantity)
         self.order_updated.emit()
         self.enable_finalization.emit()
         self.close()
@@ -66,3 +82,6 @@ class RelatedProductsWindow(QWidget):
 
     def add_order_row(self, product_id, quantity):
         self.order_repo.add_row(product_id, quantity)
+
+    def add_delivery_row(self, price):
+        self.order_repo.add_delivery_row(price)

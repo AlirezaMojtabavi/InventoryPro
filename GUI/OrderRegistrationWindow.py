@@ -19,7 +19,7 @@ class OrderRegistrationWindow(QWidget):
         self.layout.addWidget(self.customer_Registration_widget)
         self.setLayout(self.layout)
         self.setWindowTitle('Customer Registration Window')
-        self.setGeometry(100, 100, 400, 180)
+        self.setGeometry(100, 60, 400, 180)
 
     def show_product_ordering_widget(self):
         self.product_ordering_widget.setDisabled(False)
@@ -31,5 +31,5 @@ class OrderRegistrationWindow(QWidget):
         #order_repo = self.customer_Registration_widget.get_order_repository()
         #self.product_ordering_widget.set_order_repository(order_repo)
         self.layout.addWidget(self.product_ordering_widget)
-        self.setGeometry(100, 100, 700, 600)
+        self.setGeometry(100, 45, 700, 600)
         self.product_ordering_widget.show()
