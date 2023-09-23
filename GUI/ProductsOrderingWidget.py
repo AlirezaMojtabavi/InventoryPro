@@ -9,6 +9,7 @@ from psycopg2.extras import DictRow
 from Repositories.ProductRepository import ProductRepository
 from Repositories.OrderRepository import OrderRepository
 from GUI.RelatedProductsWindow import RelatedProductsWindow
+from GUI.PackBoxRelatedProducts import PackBoxRelatedProducts
 from reportlab.lib.pagesizes import A5
 from reportlab.pdfgen import canvas
 import subprocess
@@ -40,6 +41,7 @@ class ProductsOrderingWidget(QWidget):
         self.product_repository = ProductRepository()
         self.order_repo = order_repo
         self.related_products_window = None
+        self.PackBox_Related_Products = None
         self.order_table = None
         self.choose_button = None
         self.finalize_button = None
@@ -162,15 +164,24 @@ class ProductsOrderingWidget(QWidget):
 
     def show_sub_label_products(self, category_name, child_label):
         products = self.product_repository.get_products_by_sub_label(category_name, child_label)
-        self.related_products_window = RelatedProductsWindow(products, self.order_repo)
-        # self.related_products_window.set_order_repository(self.order_repository)
-        self.related_products_window.order_updated.connect(self.order_update_signal.order_updated.emit)
-        self.related_products_window.enable_finalization.connect(
-            self.enable_finalization_signal.enable_finalization.emit)
-        self.related_products_window.show()
 
-    # def set_order_repository(self, order_repository):
-    #     self.order_repository = order_repository
+        if category_name == "Heets" or category_name == "Terea":
+            self.PackBox_Related_Products = PackBoxRelatedProducts(products, self.order_repo, category_name)
+            self.PackBox_Related_Products.order_updated.connect(self.order_update_signal.order_updated.emit)
+            self.PackBox_Related_Products.enable_finalization.connect(
+                self.enable_finalization_signal.enable_finalization.emit)
+            self.PackBox_Related_Products.show()
+        else:
+            self.related_products_window = RelatedProductsWindow(products, self.order_repo)
+            self.related_products_window.order_updated.connect(self.order_update_signal.order_updated.emit)
+            self.related_products_window.enable_finalization.connect(
+                self.enable_finalization_signal.enable_finalization.emit)
+            self.related_products_window.show()
+
+        # self.related_products_window.order_updated.connect(self.order_update_signal.order_updated.emit)
+        # self.related_products_window.enable_finalization.connect(
+        #     self.enable_finalization_signal.enable_finalization.emit)
+        # self.related_products_window.show()
 
     def update_order_rows(self):
         order = self.order_repo.get_order()
@@ -284,12 +295,15 @@ class ProductsOrderingWidget(QWidget):
 
         # ___________________Part3_______________
         self.pdf.setFont("FarsiFont", 11)
-        price_unit_string = "تمامی مبالغ به ریال میباشد."
-        unit_text = self.convert_to_farsi(price_unit_string)
-        self.pdf.drawRightString(380, total_y - 35, unit_text)
+        # price_unit_string = "تمامی مبالغ به ریال میباشد."
+        # unit_text = self.convert_to_farsi(price_unit_string)
+        # self.pdf.drawRightString(380, total_y - 35, unit_text)
+        packBox_string = "10 عدد پاکت، معادل است با 1 جعبه"
+        packBox_text = self.convert_to_farsi(packBox_string)
+        self.pdf.drawRightString(380, total_y - 35, packBox_text)
         payment_text_string = "لطفا پس از پرداخت، فیش واریزی را ارسال نمایید."
         payment_text = self.convert_to_farsi(payment_text_string)
-        self.pdf.drawRightString(380, total_y - 55, payment_text)
+        self.pdf.drawRightString(380, total_y - 50, payment_text)
 
         self.pdf.setFont("FarsiFont", 8)
         karen_text_string = "مجموعه کارن آیکوس، تخصصی ترین مجموعه در حوضه محصولات آیکوس، هیتس و تریا"
@@ -316,7 +330,7 @@ class ProductsOrderingWidget(QWidget):
         return farsi_name_display
 
     def prepare_pdf_order_table(self, the_order):
-        table_data = [["Code", "Product", "Quantity", "Price"]]
+        table_data = [["Code", "Product", "Quantity", "Price\n(Rials)"]]
         for row in the_order.rows:
             table_data.append([
                 row.product.code,
@@ -329,7 +343,7 @@ class ProductsOrderingWidget(QWidget):
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, 0), 12),
+            ("FONTSIZE", (0, 0), (-1, 0), 10),
             ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
             ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
             ("GRID", (0, 0), (-1, -1), 1, colors.black),
