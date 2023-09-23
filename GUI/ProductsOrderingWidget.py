@@ -4,10 +4,8 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, \
     QMenu, QAction
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import QObject, pyqtSignal, Qt, QPoint
-from psycopg2.extras import DictRow
 
 from Repositories.ProductRepository import ProductRepository
-from Repositories.OrderRepository import OrderRepository
 from GUI.RelatedProductsWindow import RelatedProductsWindow
 from GUI.PackBoxRelatedProducts import PackBoxRelatedProducts
 from reportlab.lib.pagesizes import A5
@@ -20,7 +18,7 @@ from bidi.algorithm import get_display
 import arabic_reshaper
 
 from reportlab.pdfbase import pdfmetrics
-from reportlab.platypus import Image, Paragraph, Table, TableStyle
+from reportlab.platypus import Table, TableStyle
 from reportlab.lib import colors
 
 
@@ -30,6 +28,10 @@ class OrderUpdateSignal(QObject):
 
 class EnableFinalizeButtonSignal(QObject):
     enable_finalization = pyqtSignal()
+
+
+class PackBoxStringSignal(QObject):
+    enable_packBox_string = pyqtSignal()
 
 
 class ProductsOrderingWidget(QWidget):
@@ -46,12 +48,15 @@ class ProductsOrderingWidget(QWidget):
         self.choose_button = None
         self.finalize_button = None
         self.pdf = None
+        self.packBox_invoice = False
         self.initUI()
         self.order_update_signal = OrderUpdateSignal()
         self.enable_finalization_signal = EnableFinalizeButtonSignal()
+        self.enable_packBox_string_signal = PackBoxStringSignal()
 
         self.order_update_signal.order_updated.connect(self.update_order_rows)
         self.enable_finalization_signal.enable_finalization.connect(self.enable_finalization)
+        self.enable_packBox_string_signal.enable_packBox_string.connect(self.enable_packBox_string)
 
     def initUI(self):
         self.product_ordering_group_box = QGroupBox("Product Ordering")
@@ -168,6 +173,8 @@ class ProductsOrderingWidget(QWidget):
         if category_name == "Heets" or category_name == "Terea":
             self.PackBox_Related_Products = PackBoxRelatedProducts(products, self.order_repo, category_name)
             self.PackBox_Related_Products.order_updated.connect(self.order_update_signal.order_updated.emit)
+            self.PackBox_Related_Products.enable_packBox.connect(
+                self.enable_packBox_string_signal.enable_packBox_string.emit)
             self.PackBox_Related_Products.enable_finalization.connect(
                 self.enable_finalization_signal.enable_finalization.emit)
             self.PackBox_Related_Products.show()
@@ -177,11 +184,6 @@ class ProductsOrderingWidget(QWidget):
             self.related_products_window.enable_finalization.connect(
                 self.enable_finalization_signal.enable_finalization.emit)
             self.related_products_window.show()
-
-        # self.related_products_window.order_updated.connect(self.order_update_signal.order_updated.emit)
-        # self.related_products_window.enable_finalization.connect(
-        #     self.enable_finalization_signal.enable_finalization.emit)
-        # self.related_products_window.show()
 
     def update_order_rows(self):
         order = self.order_repo.get_order()
@@ -298,12 +300,18 @@ class ProductsOrderingWidget(QWidget):
         # price_unit_string = "تمامی مبالغ به ریال میباشد."
         # unit_text = self.convert_to_farsi(price_unit_string)
         # self.pdf.drawRightString(380, total_y - 35, unit_text)
-        packBox_string = "10 عدد پاکت، معادل است با 1 جعبه"
-        packBox_text = self.convert_to_farsi(packBox_string)
-        self.pdf.drawRightString(380, total_y - 35, packBox_text)
-        payment_text_string = "لطفا پس از پرداخت، فیش واریزی را ارسال نمایید."
-        payment_text = self.convert_to_farsi(payment_text_string)
-        self.pdf.drawRightString(380, total_y - 50, payment_text)
+        if self.packBox_invoice:
+            packBox_string = "10 عدد پاکت، معادل است با 1 جعبه"
+            packBox_text = self.convert_to_farsi(packBox_string)
+            self.pdf.drawRightString(380, total_y - 35, packBox_text)
+            payment_text_string = "لطفا پس از پرداخت، فیش واریزی را ارسال نمایید."
+            payment_text = self.convert_to_farsi(payment_text_string)
+            self.pdf.drawRightString(380, total_y - 50, payment_text)
+        else:
+            payment_text_string = "لطفا پس از پرداخت، فیش واریزی را ارسال نمایید."
+            payment_text = self.convert_to_farsi(payment_text_string)
+            self.pdf.drawRightString(380, total_y - 40, payment_text)
+
 
         self.pdf.setFont("FarsiFont", 8)
         karen_text_string = "مجموعه کارن آیکوس، تخصصی ترین مجموعه در حوضه محصولات آیکوس، هیتس و تریا"
@@ -351,3 +359,6 @@ class ProductsOrderingWidget(QWidget):
         table = Table(table_data)
         table.setStyle(table_style)
         return table
+
+    def enable_packBox_string(self):
+        self.packBox_invoice = True

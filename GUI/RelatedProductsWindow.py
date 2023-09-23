@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, \
-    QPushButton, QSpinBox, QGridLayout, QScrollArea, QLineEdit
+    QPushButton, QSpinBox, QGridLayout, QScrollArea, QGroupBox, \
+    QHBoxLayout
 from PyQt5.QtCore import QObject, pyqtSignal
 
 
@@ -38,9 +39,13 @@ class RelatedProductsWindow(QWidget):
             if productItem.price == 0:
                 spinBox.setDisabled(True)
 
-            self.content_layout.addWidget(product_code, i, 0)
-            self.content_layout.addWidget(product_name, i, 1)
-            self.content_layout.addWidget(spinBox, i, 2)
+            product_group_box = QGroupBox()
+            product_group_layout = QHBoxLayout(product_group_box)
+            product_group_layout.addWidget(product_code)
+            product_group_layout.addWidget(product_name)
+            product_group_layout.addWidget(spinBox)
+
+            self.content_layout.addWidget(product_group_box, i, 0)
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -58,7 +63,7 @@ class RelatedProductsWindow(QWidget):
 
     def confirm_button_clicked(self):
         for i in range(len(self.products)):
-            spinBox = self.content_layout.itemAtPosition(i, 2).widget()
+            spinBox = self.content_layout.itemAtPosition(i, 0).widget().layout().itemAt(2).widget()
             quantity = spinBox.value()
             if quantity > 0:
                 product = self.products[i]
@@ -70,9 +75,6 @@ class RelatedProductsWindow(QWidget):
         self.order_updated.emit()
         self.enable_finalization.emit()
         self.close()
-
-    # def set_order_repository(self, order_repo):
-    #     self.order_repo = order_repo
 
     def add_order_row(self, product_id, quantity):
         self.order_repo.add_row(product_id, quantity)

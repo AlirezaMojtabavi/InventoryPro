@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, \
-    QPushButton, QSpinBox, QGridLayout, QScrollArea, QLineEdit
+    QPushButton, QSpinBox, QGridLayout, QScrollArea, QGroupBox, \
+    QHBoxLayout
 from PyQt5.QtCore import QObject, pyqtSignal
 
 
@@ -14,9 +15,11 @@ class EnableFinalizeButtonSignal(QObject):
 class PackBoxRelatedProducts(QWidget):
     order_updated = pyqtSignal()
     enable_finalization = pyqtSignal()
+    enable_packBox = pyqtSignal()
 
     def __init__(self, products, order_repo, category_name):
         super().__init__()
+        self.packBox_invoice = False
         self.products = products
         self.order_repo = order_repo
         self.category_name = category_name
@@ -44,10 +47,22 @@ class PackBoxRelatedProducts(QWidget):
                 pack_spinBox.setDisabled(True)
                 box_spinBox.setDisabled(True)
 
-            self.content_layout.addWidget(product_code, i, 0)
-            self.content_layout.addWidget(product_name, i, 1)
-            self.content_layout.addWidget(box_spinBox, i, 2)
-            self.content_layout.addWidget(pack_spinBox, i, 3)
+            product_group_box = QGroupBox()
+            product_group_layout = QHBoxLayout(product_group_box)
+            product_group_layout.addWidget(product_code)
+            product_group_layout.addWidget(product_name)
+
+            pack_group_box = QGroupBox("Pack Quantity")
+            pack_group_layout = QVBoxLayout(pack_group_box)
+            pack_group_layout.addWidget(pack_spinBox)
+
+            box_group_box = QGroupBox("Box Quantity")
+            box_group_layout = QVBoxLayout(box_group_box)
+            box_group_layout.addWidget(box_spinBox)
+
+            self.content_layout.addWidget(product_group_box, i, 0)
+            self.content_layout.addWidget(pack_group_box, i, 1)
+            self.content_layout.addWidget(box_group_box, i, 2)
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -56,27 +71,32 @@ class PackBoxRelatedProducts(QWidget):
         confirm_button = QPushButton("Confirm")
         confirm_button.clicked.connect(self.confirm_button_pack_box_clicked)
 
-        # main_layout = QGridLayout(self)
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(scroll_area)
         main_layout.addWidget(confirm_button)
         self.setWindowTitle('Related Products Window')
-        self.setGeometry(200, 50, 450, 600)
+        self.setGeometry(200, 50, 540, 670)
 
     def confirm_button_pack_box_clicked(self):
         for i in range(len(self.products)):
-            box_spinBox = self.content_layout.itemAtPosition(i, 2).widget()
-            pack_spinBox = self.content_layout.itemAtPosition(i, 3).widget()
+            box_spinBox = self.content_layout.itemAtPosition(i, 2).widget().layout().itemAt(0).widget()
+            pack_spinBox = self.content_layout.itemAtPosition(i, 1).widget().layout().itemAt(0).widget()
             box_quantity = box_spinBox.value()
             pack_quantity = pack_spinBox.value()
             if box_quantity > 0 or pack_quantity > 0:
                 product = self.products[i]
                 if (box_quantity > 0) and not(pack_quantity > 0):
+                    self.packBox_invoice = True
+                    #self.enable_packBox.emit()
                     self.add_order_row(product_id=product.id, quantity=box_quantity * 10)
                 elif (pack_quantity > 0) and not(box_quantity > 0):
                     self.add_order_row(product_id=product.id, quantity=pack_quantity)
                 elif (box_quantity > 0) and (pack_quantity > 0):
                     self.add_order_row(product_id=product.id, quantity=pack_quantity + box_quantity * 10)
+                    self.packBox_invoice = True
+
+        if self.packBox_invoice:
+            self.enable_packBox.emit()
 
         self.order_updated.emit()
         self.enable_finalization.emit()
