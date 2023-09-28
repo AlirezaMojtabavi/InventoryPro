@@ -21,6 +21,8 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.platypus import Table, TableStyle
 from reportlab.lib import colors
 
+import configparser
+
 
 class OrderUpdateSignal(QObject):
     order_updated = pyqtSignal()
@@ -234,13 +236,16 @@ class ProductsOrderingWidget(QWidget):
         buffer = io.BytesIO()
         self.pdf = canvas.Canvas(buffer, pagesize=A5)
 
-        farsi_font_path = "F://InventoryManagement//Resources//B Nazanin.ttf"
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+        farsi_font_path = config.get('Paths', 'farsi_font_path')
+
         pdfmetrics.registerFont(TTFont("FarsiFont", farsi_font_path))
-        Arial_font_path = "F://InventoryManagement//Resources//arial.ttf"
+        Arial_font_path = config.get('Paths', 'Arial_font_path')
         pdfmetrics.registerFont(TTFont("ArialFont", Arial_font_path))
         reportlab.rl_config.canvas_basefontname = "ArialFont"
 
-        karen_image_path = "F://InventoryManagement//Resources//logo.png"
+        karen_image_path = config.get('Paths', 'karen_image_path')
         self.pdf.drawImage(karen_image_path, 100, 560, 200, 25)
 
         # __________________Part1______________________
@@ -301,7 +306,7 @@ class ProductsOrderingWidget(QWidget):
         # unit_text = self.convert_to_farsi(price_unit_string)
         # self.pdf.drawRightString(380, total_y - 35, unit_text)
         if self.packBox_invoice:
-            packBox_string = "10 عدد پاکت، معادل است با 1 جعبه"
+            packBox_string = "10 عدد پاکت، معادل است با 1 باکس"
             packBox_text = self.convert_to_farsi(packBox_string)
             self.pdf.drawRightString(380, total_y - 35, packBox_text)
             payment_text_string = "لطفا پس از پرداخت، فیش واریزی را ارسال نمایید."
@@ -318,20 +323,22 @@ class ProductsOrderingWidget(QWidget):
         karen_text = self.convert_to_farsi(karen_text_string)
         self.pdf.drawRightString(380, 15, karen_text)
 
-        footer_image = "F://InventoryManagement//Resources//footer.png"
+        footer_image = config.get('Paths', 'footer_image')
         self.pdf.drawImage(footer_image, 10, 10, 130, 80)
 
         self.pdf.save()
 
         # Save the PDF to a file
         file_name = "sales_invoice" + str(the_order.id) + ".pdf"
-        output_dir = "F://InventoryManagement//Output//"
+        output_dir = config.get('Paths', 'output_dir')
         with open(output_dir + file_name, "wb") as file:
             file.write(buffer.getvalue())
 
         # Open the PDF file in a new window
-        subprocess.Popen(["start", output_dir + file_name], shell=True)
 
+        subprocess.Popen(["start", output_dir + file_name], shell=True)
+        x = self.parentWidget()
+        x.close()
     def convert_to_farsi(self, text):
         reshaped_name = arabic_reshaper.reshape(text)
         farsi_name_display = get_display(reshaped_name)

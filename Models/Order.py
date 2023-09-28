@@ -12,6 +12,7 @@ class Order(Base):
     customer = relationship('Customer')
     order_time = Column(Date, default=datetime.now())
     totalPrice = Column(Float, default=0)
+    discount = Column(Float, nullable=True, default=0.0)
 
     def __init__(self, customer_id):
         self.customer_id = customer_id

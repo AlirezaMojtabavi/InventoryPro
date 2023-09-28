@@ -13,6 +13,7 @@ class OrderRow(Base):
     product = relationship('Product', backref=backref('order_rows'))
     quantity = Column(Integer)
     rowPrice = Column(Float, default=0)
+    discount = Column(Float, nullable=True, default=0.0)
 
     def __init__(self, order_id, product_id, row_price, quantity=None):
         self.order_id = order_id

@@ -62,8 +62,7 @@ class ProductRepository:
 
     def edit_product_price(self, code, new_price):
         product_item = self.get_product_by_code(code)
-        setattr(product_item, product_item.price, new_price)
-        # product_item.price = new_price
+        setattr(product_item, "price", new_price)
         self.session.commit()
         self.session.close()
 

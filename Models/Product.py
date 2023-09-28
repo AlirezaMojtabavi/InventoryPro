@@ -26,6 +26,7 @@ class TereaCategory(enum.Enum):
     Indonesian = 'Indonesian'
     Italian = 'Italian'
 
+
 class IqosCategory(enum.Enum):
     Iluma = 'Iluma'
     Lil = 'Lil'
@@ -38,10 +39,11 @@ class Product(Base):
     id = Column(Integer, primary_key=True, nullable=False)
     name = Column(String(50), nullable=False)
     code = Column(String(20), unique=True, nullable=False)
-    price = Column(Float, nullable=True, default=0.0)
+    price = Column(Float, nullable=False, default=0.0)
     label = Column(Enum(Category), default=Category.Miscellaneous, nullable=False)
     image_id = Column(Integer, ForeignKey('images.id'), nullable=True)
     image = relationship('ProductImage')
+
 
     def __init__(self, name, code, label=None, price=None):
         self.name = name
