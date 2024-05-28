@@ -84,7 +84,7 @@ class InsertNewProduct(QWidget):
         self.category_text.setFocus()
 
     def enable_confirm_button(self):
-        self.confirm_button.setDis(True)
+        self.confirm_button.setDisabled(False)
 
     def confirm_product(self):
         code = self.product_code_text.text()
@@ -92,3 +92,4 @@ class InsertNewProduct(QWidget):
         price = float(self.price_text.text())
         category = self.category_text.text()
         self.product_repo.insert_item(name, code, category, price)
+        self.close()

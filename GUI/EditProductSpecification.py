@@ -1,8 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, \
     QPushButton, QGroupBox, QFormLayout
-from GUI.CustomerRegistrationWidget import CustomerRegistrationWidget
 from Repositories.ProductRepository import ProductRepository
-from GUI.ProductsOrderingWidget import ProductsOrderingWidget
 
 
 class EditProductSpecification(QWidget):
@@ -67,3 +65,4 @@ class EditProductSpecification(QWidget):
         new_price = self.price_text.text()
         product_code= self.product_code_text.text()
         self.product_repo.edit_product_price(product_code, new_price)
+        self.close()

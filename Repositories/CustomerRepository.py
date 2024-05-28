@@ -61,3 +61,9 @@ class CustomerRepository:
 
     def get_current_customer(self):
         return self.customer
+
+    def edit_customer(self, phone_number, customer_name):
+        customer = self.session.query(Customer).filter_by(phone=phone_number).first()
+        setattr(customer, "name", customer_name)
+        self.session.commit()
+        self.session.close()

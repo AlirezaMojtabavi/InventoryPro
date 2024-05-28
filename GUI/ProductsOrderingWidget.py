@@ -1,5 +1,5 @@
 import io
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, \
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLineEdit, \
     QPushButton, QTableWidget, QTableWidgetItem, QGroupBox, \
     QMenu, QAction
 from PyQt5.QtGui import QFont
@@ -49,6 +49,7 @@ class ProductsOrderingWidget(QWidget):
         self.order_table = None
         self.choose_button = None
         self.finalize_button = None
+        self.discounted_price = None
         self.pdf = None
         self.packBox_invoice = False
         self.initUI()
@@ -76,8 +77,8 @@ class ProductsOrderingWidget(QWidget):
 
     def prepare_order_table(self):
         self.order_table = QTableWidget()
-        self.order_table.setColumnCount(5)
-        self.order_table.setHorizontalHeaderLabels(["Code", "Product Name", "Quantity", "Price", "Actions"])
+        self.order_table.setColumnCount(6)
+        self.order_table.setHorizontalHeaderLabels(["Code", "Product Name", "Quantity", "Price", "Actions", "Discount"])
 
         font = QFont()
         font.setBold(True)
@@ -224,6 +225,14 @@ class ProductsOrderingWidget(QWidget):
                 self.order_table.setCellWidget(i, 4, remove_button)
                 self.order_table.setColumnWidth(4, remove_button.sizeHint().width())
 
+                discount_button = QPushButton("Discount", self.order_table)
+                discount_button.setObjectName(f"discount_{i}")
+                # remove_button.clicked.connect(lambda _, row_id=row.id: self.remove_row(row.id))
+                discount_button.setProperty("row_id", row.id)
+                discount_button.clicked.connect(self.open_discount_window)
+                self.order_table.setCellWidget(i, 5, discount_button)
+                self.order_table.setColumnWidth(5, discount_button.sizeHint().width())
+
     def remove_row(self, row_id):
         remove_button = self.sender()
         row_id = remove_button.property("row_id")
@@ -317,7 +326,6 @@ class ProductsOrderingWidget(QWidget):
             payment_text = self.convert_to_farsi(payment_text_string)
             self.pdf.drawRightString(380, total_y - 40, payment_text)
 
-
         self.pdf.setFont("FarsiFont", 8)
         karen_text_string = "مجموعه کارن آیکوس، تخصصی ترین مجموعه در حوضه محصولات آیکوس، هیتس و تریا"
         karen_text = self.convert_to_farsi(karen_text_string)
@@ -339,6 +347,8 @@ class ProductsOrderingWidget(QWidget):
         subprocess.Popen(["start", output_dir + file_name], shell=True)
         x = self.parentWidget()
         x.close()
+        self.order_repo.finish()
+
     def convert_to_farsi(self, text):
         reshaped_name = arabic_reshaper.reshape(text)
         farsi_name_display = get_display(reshaped_name)
@@ -369,3 +379,22 @@ class ProductsOrderingWidget(QWidget):
 
     def enable_packBox_string(self):
         self.packBox_invoice = True
+
+    def open_discount_window(self):
+        discount_button = self.sender()
+        row_id = discount_button.property("row_id")
+        #item_number = int(discount_button.objectName()[9:12])
+        item_number = self.order_table.indexAt(discount_button.pos()).row()
+        self.discounted_price = QLineEdit()
+        self.discounted_price.returnPressed.connect(lambda: self.set_discounted_price(row_id, item_number))
+        self.discounted_price.setFocus()
+        self.discounted_price.show()
+
+    def set_discounted_price(self, row_id, item_number):
+        discounted_price = self.discounted_price.text()
+        discounted_price = float(discounted_price)
+
+        price_item = QTableWidgetItem("{:,.0f}".format(discounted_price))
+        self.order_table.setItem(item_number, 3, price_item)
+        self.order_repo.discounted_row(row_id, discounted_price)
+        self.discounted_price.close()

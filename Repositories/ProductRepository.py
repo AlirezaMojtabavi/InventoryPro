@@ -37,7 +37,7 @@ class ProductRepository:
         code = code.strip()
         if label is not None:
             try:
-                product = Product(name, code, price, label)
+                product = Product(name, code, label, price)
             except DataError:
                 product = Product(name, code, price)  # Set default value for label
 

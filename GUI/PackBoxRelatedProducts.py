@@ -52,11 +52,11 @@ class PackBoxRelatedProducts(QWidget):
             product_group_layout.addWidget(product_code)
             product_group_layout.addWidget(product_name)
 
-            pack_group_box = QGroupBox("Pack Quantity")
+            pack_group_box = QGroupBox("Pack")
             pack_group_layout = QVBoxLayout(pack_group_box)
             pack_group_layout.addWidget(pack_spinBox)
 
-            box_group_box = QGroupBox("Box Quantity")
+            box_group_box = QGroupBox("Box")
             box_group_layout = QVBoxLayout(box_group_box)
             box_group_layout.addWidget(box_spinBox)
 

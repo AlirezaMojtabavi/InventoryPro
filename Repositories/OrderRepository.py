@@ -54,3 +54,32 @@ class OrderRepository:
             return False
         else:
             return True
+
+    def discounted_row(self, row_id, discounted_price):
+        order_row = self.session.query(OrderRow).filter_by(id=row_id).first()
+        old_price = order_row.rowPrice
+        if order_row:
+            order_row.rowPrice = discounted_price
+            self.order.totalPrice -= old_price
+            self.order.totalPrice += discounted_price
+            self.session.commit()
+
+    def finish(self):
+        self.session.close_all()
+
+    def check_order_id(self, order_id):
+        order = self.session.query(Order).filter_by(id=order_id).first()
+        if order is not None:
+            self.set_order(order)
+            return order
+        else:
+            return None
+
+    def get_cutomer_name(self):
+        return self.order.customer.name
+
+    def get_custoemr_phone(self):
+        return self.order.customer.phone
+
+    def get_total_price(self):
+        return self.order.totalPrice

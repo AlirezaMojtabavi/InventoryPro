@@ -25,6 +25,7 @@ class TereaCategory(enum.Enum):
     European = 'European'
     Indonesian = 'Indonesian'
     Italian = 'Italian'
+    Armenia = 'Armenia'
 
 
 class IqosCategory(enum.Enum):
