@@ -27,9 +27,8 @@ class EditOrderWindow(QWidget):
 
     def retrieve_order(self):
         order_repo = self.order_information_widget.get_order_repo()
+        order_repo.update_order_time()
         self.edit_order_widget = EditOrderWidget(order_repo)
-        #order_repo = self.customer_Registration_widget.get_order_repository()
-        #self.product_ordering_widget.set_order_repository(order_repo)
         self.layout.addWidget(self.edit_order_widget)
         self.setGeometry(100, 45, 750, 600)
         self.edit_order_widget.show()

@@ -1,6 +1,7 @@
 from Models.Order import Order
 from Models.OrderRow import OrderRow
 from Repositories.ProductRepository import ProductRepository
+from datetime import datetime
 
 
 class OrderRepository:
@@ -83,3 +84,6 @@ class OrderRepository:
 
     def get_total_price(self):
         return self.order.totalPrice
+
+    def update_order_time(self):
+        self.order.order_time = datetime.now()

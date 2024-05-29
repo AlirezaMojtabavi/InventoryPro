@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Inventory Management System")
         self.setGeometry(100, 100, 400, 300)
         self.setStyleSheet("background-color: #f0f0f0;")
-        self.setWindowIcon(QIcon('Resources\logo-website.png'))
+        self.setWindowIcon(QIcon('Resources\iqos-farsi-Karen-B.png'))
 
         main_layout = QVBoxLayout()
 

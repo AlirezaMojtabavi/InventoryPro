@@ -1,15 +1,15 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, \
-    QPushButton, QGroupBox, QFormLayout
+    QPushButton, QGroupBox, QFormLayout, QMenu, QAction, QComboBox
 from GUI.CustomerRegistrationWidget import CustomerRegistrationWidget
 from Repositories.ProductRepository import ProductRepository
-from GUI.ProductsOrderingWidget import ProductsOrderingWidget
+from PyQt5.QtCore import QObject, pyqtSignal, Qt, QPoint
 
 
 class InsertNewProduct(QWidget):
     def __init__(self):
         super().__init__()
         self.confirm_button = None
-        self.category_text = None
+        self.choose_combobox = None
         self.price_text = None
         self.product_name_text = None
         self.product_code_text = None
@@ -41,12 +41,11 @@ class InsertNewProduct(QWidget):
         self.price_text.setDisabled(True)
         product_form_layout.addRow(price_label, self.price_text)
 
-        category_label = QLabel("Category:")
-        self.category_text = QLineEdit()
-        self.category_text.setFixedSize(100, 22)
-        self.category_text.returnPressed.connect(self.enable_confirm_button)
-        self.category_text.setDisabled(True)
-        product_form_layout.addRow(category_label, self.category_text)
+        self.choose_combobox = QComboBox(self)
+        self.choose_combobox.setFixedSize(200, 22)
+        self.choose_combobox.setDisabled(True)
+        self.choose_combobox.addItem("Choose a category", None)
+        product_form_layout.addRow(QLabel("Category:"), self.choose_combobox)
 
         self.confirm_button = QPushButton("Confirm")
         self.confirm_button.setFixedSize(70, 22)
@@ -57,6 +56,24 @@ class InsertNewProduct(QWidget):
         product_group_box.setLayout(product_form_layout)
         layout.addWidget(product_group_box)
         self.setLayout(layout)
+
+        self.populateComboBox()
+        self.choose_combobox.currentIndexChanged.connect(self.comboBoxItemChanged)
+
+    def populateComboBox(self):
+        categories_list = self.product_repo.get_all_categories()
+
+        for categoryItem in categories_list:
+            self.choose_combobox.addItem(categoryItem.name, categoryItem.name)
+
+    def comboBoxItemChanged(self, index):
+        selected_category = self.choose_combobox.itemData(index)
+        if selected_category:
+            self.setButtonValue(selected_category)
+        self.confirm_button.setDisabled(False)
+
+    def setButtonValue(self, value):
+        self.choose_combobox.setCurrentText(value)
 
     def check_product_code(self):
         product_code = self.product_code_text.text()
@@ -80,8 +97,8 @@ class InsertNewProduct(QWidget):
         self.price_text.setFocus()
 
     def pass_product_price(self):
-        self.category_text.setDisabled(False)
-        self.category_text.setFocus()
+        self.choose_combobox.setDisabled(False)
+        self.choose_combobox.setFocus()
 
     def enable_confirm_button(self):
         self.confirm_button.setDisabled(False)
@@ -90,6 +107,7 @@ class InsertNewProduct(QWidget):
         code = self.product_code_text.text()
         name = self.product_name_text.text()
         price = float(self.price_text.text())
-        category = self.category_text.text()
+        category = self.choose_combobox.currentText()
         self.product_repo.insert_item(name, code, category, price)
         self.close()
+
