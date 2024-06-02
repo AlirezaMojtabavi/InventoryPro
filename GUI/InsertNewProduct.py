@@ -70,7 +70,9 @@ class InsertNewProduct(QWidget):
         selected_category = self.choose_combobox.itemData(index)
         if selected_category:
             self.setButtonValue(selected_category)
-        self.confirm_button.setDisabled(False)
+            self.confirm_button.setDisabled(False)
+        if self.choose_combobox.currentText() == "Choose a category":
+            self.confirm_button.setDisabled(True)
 
     def setButtonValue(self, value):
         self.choose_combobox.setCurrentText(value)
