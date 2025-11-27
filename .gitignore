@@ -1,0 +1,26 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE
+.idea/
+.vscode/
+
+# Build / dist
+build/
+dist/
+*.spec
+
+# Executables + binaries
+*.exe
+*.dll
+
+# Output folders / generated files
+Output/
+mydoc.pdf
+Database_backup/
+
+# Local config (optional)
+config.ini
