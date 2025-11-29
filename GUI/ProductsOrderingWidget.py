@@ -96,7 +96,7 @@ class ProductsOrderingWidget(QWidget):
         self.order_table.resizeColumnsToContents()
         self.order_table.setColumnWidth(0, 100)
         self.order_table.setColumnWidth(1, 300)
-        self.order_table.setColumnWidth(3, 80)
+        self.order_table.setColumnWidth(3, 120)
 
         self.order_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.order_table.setSelectionMode(QTableWidget.SingleSelection)

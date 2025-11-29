@@ -17,6 +17,7 @@ class InvoicePdf:
         self.pagesize = pagesize
         self.buffer = io.BytesIO()
         self.pdf = canvas.Canvas(self.buffer, self.pagesize)
+        self.ROWS_PER_PAGE = 30
 
     def build(self, order, packBox_invoice) -> str:
         farsi_font_path = settings.FARSI_FONT_PATH
@@ -107,6 +108,113 @@ class InvoicePdf:
             file.write(self.buffer.getvalue())
 
         return output_path
+
+    def build_report(self, rows, start_dt, end_dt) -> str:
+        self.pagesize = A4
+        w, h = self.pagesize
+
+        pdf = canvas.Canvas(self.buffer, pagesize=self.pagesize)
+
+        pdfmetrics.registerFont(TTFont("FarsiFont", str(settings.FARSI_FONT_PATH)))
+        pdfmetrics.registerFont(TTFont("ArialFont", str(settings.ARIAL_FONT_PATH)))
+
+        # logo
+        logo_w, logo_h = 200, 40
+        logo_x = (w - logo_w) / 2
+        logo_y = h - 50
+
+        pdf.drawImage(str(settings.BRAND_IMAGE_PATH), logo_x, logo_y, width=logo_w, height=logo_h,
+                      preserveAspectRatio=True, mask='auto')
+
+        # title
+        pdf.setFont("FarsiFont", 16)
+        title = self.convert_to_farsi("گزارش فروش")
+        pdf.drawRightString(550, 770, title)
+
+        # date range (convert to jdate)
+        pdf.setFont("FarsiFont", 10)
+        j_start = jdatetime.fromgregorian(date=start_dt)
+        j_end = jdatetime.fromgregorian(date=end_dt)
+
+        date_range_text = self.convert_to_farsi(
+            f" از: {j_start.strftime('%Y-%m-%d')}     تا: {j_end.strftime('%Y-%m-%d')}")
+
+        pdf.drawRightString(550, 750, date_range_text)
+
+        # table data
+        data = [["Code", "Product", "Quantity", "Total Price"]]
+
+        pages = [rows[i:i + self.ROWS_PER_PAGE] for i in range(0, len(rows), self.ROWS_PER_PAGE)]
+
+        total_sum = 0
+        header = ["Code", "Product", "Quantity", "Total Price"]
+
+        for page_index, page_rows in enumerate(pages):
+            # ---------- HEADER (logo, title, date range) ----------
+            logo_w, logo_h = 200, 40
+            logo_x = (w - logo_w) / 2
+            logo_y = h - 50
+
+            pdf.drawImage(
+                str(settings.BRAND_IMAGE_PATH),
+                logo_x, logo_y,
+                width=logo_w, height=logo_h,
+                preserveAspectRatio=True,
+                mask="auto"
+            )
+
+            # title
+            pdf.setFont("FarsiFont", 16)
+            title = self.convert_to_farsi("گزارش فروش")
+            pdf.drawRightString(550, 770, title)
+
+            # date range
+            pdf.setFont("FarsiFont", 10)
+            date_range_text = self.convert_to_farsi(
+                f" از: {j_start.strftime('%Y-%m-%d')}     تا: {j_end.strftime('%Y-%m-%d')}")
+            pdf.drawRightString(550, 750, date_range_text)
+
+            # ---------- TABLE ----------
+            data = [header]
+            for r in page_rows:
+                total_sum += r.total_price or 0
+                data.append([r.code, r.name, str(r.quantity),
+                    "{:,.0f}".format(r.total_price or 0)])
+
+            table = Table(data, colWidths=[70, 260, 70, 90])
+            table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.gray),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 10),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.black)]))
+
+            table.wrapOn(pdf, 0, 0)
+            table_height = table._height
+
+            table.drawOn(pdf, 40, 720 - table_height)
+
+            # ---------- TOTAL on the last page ----------
+            if page_index == len(pages) - 1:
+                pdf.setFont("Helvetica-Bold", 11)
+                pdf.drawRightString(
+                    530,
+                    720 - table_height - 20,
+                    f"Total: {total_sum:,.0f}")
+
+            if page_index < len(pages) - 1:
+                pdf.showPage()
+
+        pdf.save()
+
+        file_name = f"sales_report_{start_dt}_{end_dt}.pdf"
+        output_path = settings.OUTPUT_DIR / file_name
+        with open(output_path, "wb") as f:
+            f.write(self.buffer.getvalue())
+
+        return str(output_path)
 
     @classmethod
     def convert_to_farsi(cls, text):

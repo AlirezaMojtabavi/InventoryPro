@@ -6,7 +6,7 @@ from GUI.EditProductSpecification import EditProductSpecification
 from GUI.EditCustomerSpecification import EditCustomerSpecification
 from GUI.InsertNewProduct import InsertNewProduct
 from GUI.Report.ReportWindow import ReportWindow
-from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtGui import QIcon
 from GUI.EditOrder.EditOrderWindow import EditOrderWindow
 from PyQt5.QtCore import QSize, Qt
 from GUI.Styles import MAIN_BUTTON_STYLE, MAIN_FONT, MAIN_BUTTON_SIZE, MAIN_BG_COLOR

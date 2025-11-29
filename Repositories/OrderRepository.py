@@ -2,6 +2,8 @@ from Models.Order import Order
 from Models.OrderRow import OrderRow
 from Repositories.ProductRepository import ProductRepository
 from datetime import datetime
+from sqlalchemy import func
+from Models.Product import Product
 
 
 class OrderRepository:
@@ -95,3 +97,18 @@ class OrderRepository:
         self.session.delete(self.order)
         self.session.commit()
         self.order = None
+
+    def get_product_summary_between(self, start_date, end_date):
+        query = (
+            self.session.query(
+                Product.code.label("code"),
+                Product.name.label("name"),
+                func.sum(OrderRow.quantity).label("quantity"),
+                func.sum(OrderRow.rowPrice).label("total_price"))
+            .join(OrderRow, OrderRow.product_id == Product.id)
+            .join(Order, OrderRow.order_id == Order.id)
+            .filter(Order.order_time >= start_date,
+                    Order.order_time <= end_date)
+            .group_by(Product.id, Product.code, Product.name)
+            .order_by(Product.code))
+        return query.all()

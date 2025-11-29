@@ -192,3 +192,79 @@ QMenu::separator {
     margin: 4px 0;
 }
 """
+
+# ---------- Report styles ----------
+
+APP_REPORT_STYLE = """
+QWidget#ReportRoot {
+    background-color: #f3f4f8;
+    font-family: "Segoe UI";
+    font-size: 9pt;
+    color: #222222;
+}
+
+/* labels shouldn’t draw bars behind them */
+QLabel {
+    background-color: transparent;
+}
+"""
+
+REPORT_BUTTON_STYLE = """
+QPushButton {
+    background-color: #0078ff;
+    color: white;
+    border-radius: 10px;
+    padding: 10px 28px;
+    font-size: 10.5pt;
+    font-weight: 600;
+    border: none;
+}
+QPushButton:hover {
+    background-color: #0066dd;
+}
+QPushButton:pressed {
+    background-color: #0052bb;
+}
+QPushButton:disabled {
+    background-color: #d7d7d7;
+    color: #8a8a8a;
+}
+"""
+
+REPORT_RADIO_STYLE = """
+QRadioButton {
+    font-size: 9.5pt;
+    spacing: 6px;
+}
+QRadioButton::indicator {
+    width: 16px;
+    height: 16px;
+}
+"""
+
+REPORT_DATEEDIT_STYLE = """
+QDateEdit {
+    min-width: 135px;
+    min-height: 26px;
+    padding: 3px 8px;
+    border: 1px solid #cfd3db;
+    border-radius: 8px;
+    background-color: #ffffff;
+}
+QDateEdit:focus {
+    border: 1px solid #0078ff;
+}
+QDateEdit:disabled {
+    background-color: #f3f4f7;
+    color: #999999;
+}
+"""
+
+
+DATE_CARD_STYLE = """
+QFrame#DateCard {
+    background-color: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e1e2e7;
+}
+"""
