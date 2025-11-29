@@ -87,3 +87,11 @@ class OrderRepository:
 
     def update_order_time(self):
         self.order.order_time = datetime.now()
+
+    def delete_current_order(self):
+        if self.order is None:
+            return
+
+        self.session.delete(self.order)
+        self.session.commit()
+        self.order = None
