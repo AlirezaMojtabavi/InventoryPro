@@ -43,11 +43,8 @@ class Product(Base):
     name = Column(String(50), nullable=False)
     code = Column(String(20), unique=True, nullable=False)
     price = Column(Float, nullable=False, default=0.0)
-    label = Column(SAEnum(Category, values_callable=lambda x: [e.value for e in x],
-                          native_enum=True,
-                          create_type=False),
-                   default=Category.Cat5,
-                   nullable=False)
+    label = Column(SAEnum(Category, values_callable=lambda x: [e.value for e in x], native_enum=True,
+                          create_type=False), default=Category.Cat5, nullable=False)
     image_id = Column(Integer, ForeignKey('images.id'), nullable=True)
     image = relationship('ProductImage')
 
