@@ -1,13 +1,23 @@
-Inventory Management System
+# Sales & Order Management System
 
-This repository contains the foundational data model and database interaction layer for an Inventory Management System with a PyQt-based GUI. The current implementation includes:
+A desktop application built with PyQt5 for managing products, customers, orders, and generating PDF reports.  
+Designed for shops or businesses that sell different product types and need fast order processing with reporting.
 
-SQLAlchemy ORM models for core entities such as Products, Customers, Orders, and Product Images
+---
 
-database.py for centralized database engine setup and session management
+## Features
 
-Clean separation of concerns between data, GUI, and business logic
+- Product management with categories and subcategories  
+- Customer creation and editing  
+- Order creation with real-time item selection  
+- Edit existing orders (price, items, discount)  
+- PDF invoice generator  
+- Sales report for today or custom date range  
 
-Easily extensible structure for future integration with GUI, analysis modules, and reporting tools
+---
 
-This modular design allows smooth integration with GUI-based features for registering orders, editing
+## Technologies
+
+- Python (PyQt5, SQLAlchemy, ReportLab)  
+- PostgreSQL database  
+- Config-based category naming (fully customizable)  
