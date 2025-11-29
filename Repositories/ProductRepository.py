@@ -1,4 +1,4 @@
-from Models.Product import Product, Category, TereaCategory, HeetsCategory, IqosCategory
+from Models.Product import Product, Category, SubCat1, SubCat2, SubCat3
 from sqlalchemy.exc import DataError
 
 
@@ -10,11 +10,16 @@ class ProductRepository:
         self.session = Session()
 
     def get_products_by_label(self, label):
+        if isinstance(label, str):
+            try:
+                label = Category[label]
+            except KeyError:
+                label = Category(label)
+
         return self.session.query(Product).filter_by(label=label).all()
 
     def insert_items(self, names, codes, labels, prices):
         uniqueNames = list(set(names))
-        uniqueCodes = list(set(codes))
         products = []
         for i in range(len(uniqueNames)):
             name = names[i].strip()
@@ -32,18 +37,19 @@ class ProductRepository:
         self.session.commit()
         self.session.close()
 
-    def insert_item(self, name, code, label=None, price=10.0):
-        name = name.strip()
-        code = code.strip()
-        if label is not None:
+    def insert_items(self, names, codes, labels, prices):
+        products = []
+        for name, code, label, price in zip(names, codes, labels, prices):
+            name = str(name).strip()
+            code = str(code).strip()
             try:
                 product = Product(name, code, label, price)
             except DataError:
-                product = Product(name, code, price)  # Set default value for label
+                product = Product(name, code, price=0.0)
 
-        else:
-            product = Product(name, code, price)
-        self.session.add(product)
+            products.append(product)
+
+        self.session.add_all(products)
         self.session.commit()
         self.session.close()
 
@@ -53,16 +59,34 @@ class ProductRepository:
     def get_product_by_code(self, code):
         return self.session.query(Product).filter_by(code=code).first()
 
-    def edit_product_label(self, code, _label):
+    def edit_product_label(self, code, new_label):
         product_item = self.get_product_by_code(code)
-        setattr(product_item, product_item.label, Category(_label))
-        # product_item.label = _label
+        if not product_item:
+            return
+
+        if isinstance(new_label, Category):
+            label_enum = new_label
+
+        elif isinstance(new_label, str):
+            try:
+                label_enum = Category[new_label]
+            except KeyError:
+                try:
+                    label_enum = Category(new_label)
+                except ValueError:
+                    label_enum = Category.Cat5
+        else:
+            label_enum = Category.Cat5
+
+        product_item.label = label_enum
         self.session.commit()
         self.session.close()
 
     def edit_product_price(self, code, new_price):
         product_item = self.get_product_by_code(code)
-        setattr(product_item, "price", new_price)
+        if not product_item:
+            return
+        product_item.price = new_price
         self.session.commit()
         self.session.close()
 
@@ -79,21 +103,38 @@ class ProductRepository:
     def get_all_categories(self):
         return list(Category)
 
-    def get_children_label(self, label_name):
-        if label_name == Category.Terea:
-            return list(TereaCategory)
-        elif label_name == Category.Heets:
-            return list(HeetsCategory)
-        elif label_name == Category.Iqos:
-            return list(IqosCategory)
+    def get_children_label(self, label):
+        if isinstance(label, str):
+            try:
+                label = Category[label]
+            except KeyError:
+                label = Category(label)
+
+        if label == Category.Cat1:
+            return list(SubCat1)
+        elif label == Category.Cat2:
+            return list(SubCat2)
+        elif label == Category.Cat3:
+            return list(SubCat3)
         else:
-            return False
+            return []
 
     def get_product_by_id(self, p_id):
         return self.session.query(Product).filter_by(id=p_id).first()
 
     def get_products_by_sub_label(self, parent_label, sub_label):
-        category_products = self.session.query(Product).filter_by(label=parent_label).all()
+        if isinstance(parent_label, Category):
+            label_enum = parent_label
+        elif isinstance(parent_label, str):
+            try:
+                label_enum = Category[parent_label]
+            except KeyError:
+                label_enum = Category(parent_label)
+        else:
+            raise TypeError(f"Unsupported parent_label type: {type(parent_label)}")
+
+        category_products = (
+            self.session.query(Product)
+            .filter_by(label=label_enum.value).all())
+
         return [product for product in category_products if sub_label in product.name]
-
-

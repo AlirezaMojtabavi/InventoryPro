@@ -95,7 +95,8 @@ class CustomerRegistrationWidget(QWidget):
     def get_order_repository(self):
         return self.order_repository
 
-    def validate_phone_number(self, phone_number):
+    @classmethod
+    def validate_phone_number(cls, phone_number):
         # Check if the phone number is 11 digits long, starts with 0, and contains only digits
         if len(phone_number) == 11 and phone_number.startswith('0') and phone_number.isdigit():
             return True

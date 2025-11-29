@@ -30,10 +30,13 @@ class OrderRegistrationWindow(QWidget):
         #order_repo = self.customer_Registration_widget.get_order_repository()
         #self.product_ordering_widget.set_order_repository(order_repo)
         self.layout().addWidget(self.product_ordering_widget)
-        self.setGeometry(100, 45, 750, 600)
+        self.setGeometry(100, 45, 850, 650)
         self.product_ordering_widget.show()
 
     def closeEvent(self, event):
+        if hasattr(self, "product_ordering_widget") and self.product_ordering_widget.skip_close_confirmation:
+            event.accept()
+            return
         msg = QMessageBox(self)
         msg.setIcon(QMessageBox.Warning)
         msg.setWindowTitle("Exit Confirmation")
